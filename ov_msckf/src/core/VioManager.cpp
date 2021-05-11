@@ -186,14 +186,22 @@ void VioManager::feed_measurement_stereo(double timestamp, cv::Mat& img0, cv::Ma
         trackFEATS->feed_stereo(timestamp, img0, img1, cam_id0, cam_id1);
     } else {
 #ifdef ILLIXR_INTEGRATION
-        std::thread t_l = timed_thread("slam2 feed l", &TrackBase::feed_monocular, trackFEATS, boost::ref(timestamp), boost::ref(img0), boost::ref(cam_id0));
-        std::thread t_r = timed_thread("slam2 feed r", &TrackBase::feed_monocular, trackFEATS, boost::ref(timestamp), boost::ref(img1), boost::ref(cam_id1));
+		parallel_for_(cv::Range(0, 2), [&](const cv::Range& range){
+			for (int i = range.start; i < range.end; i++) {
+				trackFEATS->feed_monocular(
+					timestamp,
+					i == 0 ? img0 : img1,
+					i == 0 ? cam_id0 : cam_id1
+				);
+			}
+		});
 #else /// ILLIXR_INTEGRATION
         boost::thread t_l = boost::thread(&TrackBase::feed_monocular, trackFEATS, boost::ref(timestamp), boost::ref(img0), boost::ref(cam_id0));
         boost::thread t_r = boost::thread(&TrackBase::feed_monocular, trackFEATS, boost::ref(timestamp), boost::ref(img1), boost::ref(cam_id1));
-#endif /// ILLIXR_INTEGRATION
+
         t_l.join();
         t_r.join();
+#endif /// ILLIXR_INTEGRATION
     }
 
     // If aruoc is avalible, the also pass to it

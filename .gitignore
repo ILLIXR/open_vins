@@ -5,3 +5,4 @@ Build
 .idea
 doxgen_generated
 *.so
+common

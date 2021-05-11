@@ -183,45 +183,27 @@ public:
 		, sb{pb->lookup_impl<switchboard>()}
 		, _m_pose{sb->get_writer<pose_type>("slow_pose")}
 		, _m_imu_integrator_input{sb->get_writer<imu_integrator_input>("imu_integrator_input")}
-		, _m_begin{std::chrono::system_clock::now()}
 		, open_vins_estimator{manager_params}
 		, imu_cam_buffer{nullptr}
 	{
-		_m_pose.put(_m_pose.allocate(
-			std::chrono::time_point<std::chrono::system_clock>{},
-			Eigen::Vector3f{0, 0, 0},
-			Eigen::Quaternionf{1, 0, 0, 0}
-		));
-
-        // Disabling OpenCV threading is faster on x86 desktop but slower on
-        // jetson. Keeping this here for manual disabling.
-        // cv::setNumThreads(0);
-
-#ifdef CV_HAS_METRICS
-		cv::metrics::setAccount(new std::string{"-1"});
-#endif
-
-	}
-
-
-	virtual void start() override {
-		plugin::start();
-		sb->schedule<imu_cam_type>(id, "imu_cam", [&](switchboard::ptr<const imu_cam_type> datum, std::size_t iteration_no) {
+		sb->schedule<imu_cam_type>(get_name(), "imu_cam", [&](switchboard::ptr<const imu_cam_type> datum, std::size_t iteration_no) {
 			this->feed_imu_cam(datum, iteration_no);
 		});
 	}
 
-
 	void feed_imu_cam(switchboard::ptr<const imu_cam_type> datum, std::size_t iteration_no) {
 		// Ensures that slam doesnt start before valid IMU readings come in
-		if (datum == NULL) {
-			assert(previous_timestamp == 0);
-			return;
+		double timestamp_in_seconds;
+		{
+			CPU_TIMER_TIME_BLOCK("IMU");
+		if (datum == nullptr) {
+			std::cerr << "slam2:feed_imu_cam datum == nullptr\n";
+			abort();
 		}
 
 		// This ensures that every data point is coming in chronological order If youre failing this assert, 
 		// make sure that your data folder matches the name in offline_imu_cam/plugin.cc
-		double timestamp_in_seconds = (double(datum->dataset_time) / NANO_SEC);
+		timestamp_in_seconds = (double(datum->dataset_time) / NANO_SEC);
 		assert(timestamp_in_seconds > previous_timestamp);
 		previous_timestamp = timestamp_in_seconds;
 
@@ -240,20 +222,27 @@ public:
 			imu_cam_buffer = datum;
 			return;
 		}
-
-#ifdef CV_HAS_METRICS
-		cv::metrics::setAccount(new std::string{std::to_string(iteration_no)});
-		if (iteration_no % 20 == 0) {
-			cv::metrics::dump();
 		}
-#else
-#warning "No OpenCV metrics available. Please recompile OpenCV from git clone --branch 3.4.6-instrumented https://github.com/ILLIXR/opencv/. (see install_deps.sh)"
-#endif
 
-		cv::Mat img0{imu_cam_buffer->img0.value()};
-		cv::Mat img1{imu_cam_buffer->img1.value()};
+		{
+			CPU_TIMER_TIME_BLOCK("cam");
+		cv::Mat img0;
+		cv::Mat img1;
+
+		{
+#ifdef ILLIXR_INTEGRATION
+			CPU_TIMER_TIME_BLOCK("cv::Mat copy");
+#endif /// ILLIXR_INTEGRATION
+			img0 = cv::Mat{imu_cam_buffer->img0.value()};
+			img1 = cv::Mat{imu_cam_buffer->img1.value()};
+		}
 		double buffer_timestamp_seconds = double(imu_cam_buffer->dataset_time) / NANO_SEC;
-		open_vins_estimator.feed_measurement_stereo(buffer_timestamp_seconds, img0, img1, 0, 1);
+		{
+#ifdef ILLIXR_INTEGRATION
+			CPU_TIMER_TIME_BLOCK("feed_measurement_stereo");
+#endif /// ILLIXR_INTEGRATION
+			open_vins_estimator.feed_measurement_stereo(buffer_timestamp_seconds, img0, img1, 0, 1);
+		}
 
 		// Get the pose returned from SLAM
 		state = open_vins_estimator.get_state();
@@ -274,6 +263,10 @@ public:
         assert(isfinite(swapped_pos[2]));
 
 		if (open_vins_estimator.initialized()) {
+#ifdef ILLIXR_INTEGRATION
+			CPU_TIMER_TIME_BLOCK("publish");
+#endif /// ILLIXR_INTEGRATION
+
 			if (isUninitialized) {
 				isUninitialized = false;
 			}
@@ -312,6 +305,7 @@ public:
 		// const_cast<imu_cam_type*>(imu_cam_buffer)->img0.reset();
 		// const_cast<imu_cam_type*>(imu_cam_buffer)->img1.reset();
 		imu_cam_buffer = datum;
+		}
 	}
 
 	virtual ~slam2() override {}
@@ -319,8 +313,8 @@ public:
 private:
 	const std::shared_ptr<switchboard> sb;
 	switchboard::writer<pose_type> _m_pose;
-    switchboard::writer<imu_integrator_input> _m_imu_integrator_input;
-	time_type _m_begin;
+	switchboard::writer<imu_integrator_input> _m_imu_integrator_input;
+
 	State *state;
 
 	VioManagerOptions manager_params = create_params();

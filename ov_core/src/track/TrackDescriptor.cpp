@@ -188,20 +188,30 @@ void TrackDescriptor::feed_stereo(double timestamp, cv::Mat &img_leftin, cv::Mat
 
     // Lets match temporally
 #ifdef ILLIXR_INTEGRATION
-    std::thread t_ll = timed_thread("slam2 rob_match l", &TrackDescriptor::robust_match, this, boost::ref(pts_last[cam_id_left]), boost::ref(pts_left_new),
-                                       boost::ref(desc_last[cam_id_left]), boost::ref(desc_left_new), cam_id_left, cam_id_left, boost::ref(matches_ll));
-    std::thread t_rr = timed_thread("slam2 rob_match r", &TrackDescriptor::robust_match, this, boost::ref(pts_last[cam_id_right]), boost::ref(pts_right_new),
-                                       boost::ref(desc_last[cam_id_right]), boost::ref(desc_right_new), cam_id_right, cam_id_right, boost::ref(matches_rr));
+	parallel_for_(cv::Range(0, 2), [&](const cv::Range& range){
+		for (int i = range.start; i < range.end; i++) {
+			CPU_TIMER_TIME_BLOCK("robust_match");
+			robust_match(
+				pts_last[i == 0 ? cam_id_left : cam_id_right],
+				i == 0 ? pts_left_new : pts_right_new,
+				desc_last[i == 0 ? cam_id_left : cam_id_right],
+				i == 0 ? desc_left_new : desc_right_new,
+				i == 0 ? cam_id_left : cam_id_right,
+				i == 0 ? cam_id_left : cam_id_right,
+				i == 0 ? matches_ll : matches_rr
+			);
+		}
+	});
 #else /// ILLIXR_INTEGRATION
     boost::thread t_ll = boost::thread(&TrackDescriptor::robust_match, this, boost::ref(pts_last[cam_id_left]), boost::ref(pts_left_new),
                                        boost::ref(desc_last[cam_id_left]), boost::ref(desc_left_new), cam_id_left, cam_id_left, boost::ref(matches_ll));
     boost::thread t_rr = boost::thread(&TrackDescriptor::robust_match, this, boost::ref(pts_last[cam_id_right]), boost::ref(pts_right_new),
                                        boost::ref(desc_last[cam_id_right]), boost::ref(desc_right_new), cam_id_right, cam_id_right, boost::ref(matches_rr));
-#endif /// ILLIXR_INTEGRATION
 
     // Wait till both threads finish
     t_ll.join();
     t_rr.join();
+#endif /// ILLIXR_INTEGRATION
 
     rT3 =  boost::posix_time::microsec_clock::local_time();
 
@@ -352,38 +362,56 @@ void TrackDescriptor::perform_detection_stereo(const cv::Mat &img0, const cv::Ma
     // Extract our features (use FAST with griding)
     std::vector<cv::KeyPoint> pts0_ext, pts1_ext;
 #ifdef ILLIXR_INTEGRATION
-    std::thread t_0 = timed_thread("slam2 grid l", &Grider_FAST::perform_griding, boost::cref(img0), boost::ref(pts0_ext),
-                                      num_features, grid_x, grid_y, threshold, true);
-    std::thread t_1 = timed_thread("slam2 grid r", &Grider_FAST::perform_griding, boost::cref(img1), boost::ref(pts1_ext),
-                                      num_features, grid_x, grid_y, threshold, true);
+	parallel_for_(cv::Range(0, 2), [&](const cv::Range& range){
+		for (int i = range.start; i < range.end; i++) {
+			CPU_TIMER_TIME_BLOCK("perform_griding");
+			Grider_FAST::perform_griding(
+				i == 0 ? img0 : img1,
+				i == 0 ? pts0_ext : pts1_ext,
+				num_features,
+				grid_x,
+				grid_y,
+				threshold,
+				true
+			);
+		}
+	});
 #else /// ILLIXR_INTEGRATION
     boost::thread t_0 = boost::thread(&Grider_FAST::perform_griding, boost::cref(img0), boost::ref(pts0_ext),
                                       num_features, grid_x, grid_y, threshold, true);
     boost::thread t_1 = boost::thread(&Grider_FAST::perform_griding, boost::cref(img1), boost::ref(pts1_ext),
                                       num_features, grid_x, grid_y, threshold, true);
-#endif /// ILLIXR_INTEGRATION
 
     // Wait till both threads finish
     t_0.join();
     t_1.join();
+#endif /// ILLIXR_INTEGRATION
 
     // For all new points, extract their descriptors
     cv::Mat desc0_ext, desc1_ext;
 
-    // Use C++11 lamdas so we can pass all theses variables by reference
 #ifdef ILLIXR_INTEGRATION
-    std::thread t_desc0 = timed_thread("slam2 orb l", [&]{this->orb0->compute(img0, pts0_ext, desc0_ext);});
-    std::thread t_desc1 = timed_thread("slam2 orb r", [&]{this->orb1->compute(img1, pts1_ext, desc1_ext);});
+	parallel_for_(cv::Range(0, 2), [&](const cv::Range& range){
+		for (int i = range.start; i < range.end; i++) {
+			CPU_TIMER_TIME_BLOCK("orb_compute");
+			(i == 0 ? orb0 : orb1)->compute(
+				i == 0 ? img0 : img1,
+				i == 0 ? pts0_ext : pts1_ext,
+				i == 0 ? desc0_ext : desc1_ext
+			);
+		}
+	});
 #else /// ILLIXR_INTEGRATION
+    // Use C++11 lamdas so we can pass all theses variables by reference
     std::thread t_desc0 = std::thread([this,&img0,&pts0_ext,&desc0_ext]{this->orb0->compute(img0, pts0_ext, desc0_ext);});
     std::thread t_desc1 = std::thread([this,&img1,&pts1_ext,&desc1_ext]{this->orb1->compute(img1, pts1_ext, desc1_ext);});
     //std::thread t_desc0 = std::thread([this,&img0,&pts0_ext,&desc0_ext]{this->freak0->compute(img0, pts0_ext, desc0_ext);});
     //std::thread t_desc1 = std::thread([this,&img1,&pts1_ext,&desc1_ext]{this->freak1->compute(img1, pts1_ext, desc1_ext);});
-#endif /// ILLIXR_INTEGRATION
 
     // Wait till both threads finish
     t_desc0.join();
     t_desc1.join();
+#endif /// ILLIXR_INTEGRATION
 
     // Do matching from the left to the right image
     std::vector<cv::DMatch> matches;
