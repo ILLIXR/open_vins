@@ -272,7 +272,7 @@ public:
 			));
 
 			_m_imu_integrator_input.put(_m_imu_integrator_input.allocate(
-				datum->time,
+				imu_cam_buffer->time,
 				from_seconds(state->_calib_dt_CAMtoIMU->value()(0)),
 				imu_params{
 					.gyro_noise = 0.00016968,
