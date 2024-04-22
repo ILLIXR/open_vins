@@ -93,6 +93,8 @@ namespace ov_msckf {
         /// Pointer to the "active" IMU state (q_GtoI, p_IinG, v_IinG, bg, ba)
         IMU *_imu;
 
+        int feat_lost;
+
         /// Map between imaging times and clone poses (q_GtoIi, p_IiinG)
         std::map<double, PoseJPL*> _clones_IMU;
 

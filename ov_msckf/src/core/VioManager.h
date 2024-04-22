@@ -27,6 +27,7 @@
 #include <fstream>
 #include <Eigen/StdVector>
 #include <boost/filesystem.hpp>
+#include "filesystem"
 
 #include "track/TrackAruco.h"
 #include "track/TrackDescriptor.h"
@@ -60,6 +61,9 @@ namespace ov_msckf {
 
 
     public:
+
+        // To print feature information
+        std::ofstream feat_lost_csv;
 
         /**
          * @brief Default constructor, will load all configuration variables

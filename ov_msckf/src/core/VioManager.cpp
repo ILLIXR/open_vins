@@ -32,6 +32,7 @@ using namespace ov_type;
 using namespace ov_msckf;
 
 VioManager::VioManager(VioManagerOptions& params_) {
+    feat_lost_csv.open(boost::filesystem::current_path().string() + "/recorded_data/feat_lost.csv");
     // Nice startup message
     #ifndef NDEBUG
         printf("=======================================\n");
@@ -291,13 +292,13 @@ bool VioManager::try_to_initialize() {
     }
 
     // Else we are good to go, print out our stats
-    #ifndef NDEBUG
+    // #ifndef NDEBUG
         printf(GREEN "[INIT]: orientation = %.4f, %.4f, %.4f, %.4f\n" RESET,state->_imu->quat()(0),state->_imu->quat()(1),state->_imu->quat()(2),state->_imu->quat()(3));
         printf(GREEN "[INIT]: bias gyro = %.4f, %.4f, %.4f\n" RESET,state->_imu->bias_g()(0),state->_imu->bias_g()(1),state->_imu->bias_g()(2));
         printf(GREEN "[INIT]: velocity = %.4f, %.4f, %.4f\n" RESET,state->_imu->vel()(0),state->_imu->vel()(1),state->_imu->vel()(2));
         printf(GREEN "[INIT]: bias accel = %.4f, %.4f, %.4f\n" RESET,state->_imu->bias_a()(0),state->_imu->bias_a()(1),state->_imu->bias_a()(2));
         printf(GREEN "[INIT]: position = %.4f, %.4f, %.4f\n" RESET,state->_imu->pos()(0),state->_imu->pos()(1),state->_imu->pos()(2));
-    #endif
+    // #endif
     return true;
 
 }
@@ -345,6 +346,9 @@ void VioManager::do_feature_propagate_update(double timestamp) {
     // Now, lets get all features that should be used for an update that are lost in the newest frame
     std::vector<Feature*> feats_lost, feats_marg, feats_slam;
     feats_lost = trackFEATS->get_feature_database()->features_not_containing_newer(state->_timestamp);
+    // printf(RED "%f, %d\n" RESET, timestamp, feats_lost.size());
+    feat_lost_csv << timestamp*1e9 << "," << feats_lost.size() << std::endl;
+    state->feat_lost = feats_lost.size();
 
     // Don't need to get the oldest features untill we reach our max number of clones
     if((int)state->_clones_IMU.size() > state->_options.max_clone_size) {

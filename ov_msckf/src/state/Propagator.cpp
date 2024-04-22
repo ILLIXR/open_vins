@@ -58,9 +58,12 @@ void Propagator::propagate_and_clone(State* state, double timestamp) {
     double t_off_new = state->_calib_dt_CAMtoIMU->value()(0);
 
     // First lets construct an IMU vector of measurements we need
-    double time0 = state->_timestamp+last_prop_time_offset;
-    double time1 = timestamp+t_off_new;
+    // double time0 = state->_timestamp+last_prop_time_offset;
+    // double time1 = timestamp+t_off_new;
+    double time0 = state->_timestamp+0.0;
+    double time1 = timestamp+0.0;
     vector<IMUDATA> prop_data = Propagator::select_imu_readings(imu_data,time0,time1);
+    // std::cout << "last_prop_time_offset " << last_prop_time_offset << " t_off_new " << t_off_new << " time0 " << time0 << " time1 " << time1 << " timestamp " << timestamp << " prop_data.size() " << prop_data.size() << std::endl;
 
     // We are going to sum up all the state transition matrices, so we can do a single large multiplication at the end
     // Phi_summed = Phi_i*Phi_summed

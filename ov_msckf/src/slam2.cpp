@@ -15,6 +15,7 @@
 #include "common/data_format.hpp"
 #include "common/phonebook.hpp"
 #include "common/relative_clock.hpp"
+#include "filesystem"
 
 using namespace ILLIXR;
 using namespace ov_msckf;
@@ -205,22 +206,28 @@ public:
 #ifdef CV_HAS_METRICS
 		cv::metrics::setAccount(new std::string{"-1"});
 #endif
+		if (!filesystem::exists(data_path)) {
+            if (!std::filesystem::create_directory(data_path)) {
+                std::cerr << "Failed to create data directory.";
+            }
+        }
 
 		boost::filesystem::create_directories(cam0_data_dir);
         // std::string cam0_file = (data_path  + "/cam0" / "data.csv").string();
-		std::string cam0_file = data_path + "/cam0/data.csv";
-        cam0_wt_file.open(cam0_file, std::ofstream::out);
-        cam0_wt_file << "#timestamp [ns],filename" << std::endl;
+		// std::string cam0_file = data_path + "/cam0/data.csv";
+        // cam0_wt_file.open(cam0_file, std::ofstream::out);
+        // cam0_wt_file << "#timestamp [ns],filename" << std::endl;
 
         // create cam1 directory
         boost::filesystem::create_directories(cam1_data_dir);
         // std::string cam1_file = (data_path + / "/cam1" / "data.csv").string();
-		std::string cam1_file = data_path + "/cam1/data.csv";
-        cam1_wt_file.open(cam1_file, std::ofstream::out);
-        cam1_wt_file << "#timestamp [ns],filename" << std::endl;
+		// std::string cam1_file = data_path + "/cam1/data.csv";
+        // cam1_wt_file.open(cam1_file, std::ofstream::out);
+        // cam1_wt_file << "#timestamp [ns],filename" << std::endl;
 
-		imu_csv.open(boost::filesystem::current_path().string() + "/recorded_data/imu.csv");
+		// imu_csv.open(boost::filesystem::current_path().string() + "/recorded_data/imu.csv");
 		slam_csv.open(boost::filesystem::current_path().string() + "/recorded_data/slam.csv");
+		ov_time_csv.open(boost::filesystem::current_path().string() + "/recorded_data/ov_time.csv");
 	}
 
 
@@ -240,6 +247,7 @@ public:
 
 		// Feed the IMU measurement. There should always be IMU data in each call to feed_imu_cam
 		open_vins_estimator.feed_measurement_imu(duration2double(datum->time.time_since_epoch()), datum->angular_v, datum->linear_a);
+		// std::cout << "OV: Fed an IMU at " << duration2double(datum->time.time_since_epoch()) << "\n";
 		imu_csv << datum->time.time_since_epoch().count() << "," << std::setprecision(17) 
 				<< datum->angular_v.cast<double>()[0] << "," << datum->angular_v.cast<double>()[1] << "," << datum->angular_v.cast<double>()[2]<< ","
 				<< datum->linear_a.cast<double>()[0] << "," << datum->linear_a.cast<double>()[1] << "," << datum->linear_a.cast<double>()[2] << std::endl;
@@ -269,7 +277,13 @@ public:
 
 		cv::Mat img0{cam_buffer->img0};
 		cv::Mat img1{cam_buffer->img1};
+		// cv::imshow("img0", img0);
+		// cv::waitKey(1);
+		// cv::imshow("img1", img1);
+		// cv::waitKey(1);
+		time_point begin_vio = _m_rtc->now();
 		open_vins_estimator.feed_measurement_stereo(duration2double(cam_buffer->time.time_since_epoch()), img0, img1, 0, 1);
+		// std::cout << "OV: Fed a CAM at " << duration2double(cam_buffer->time.time_since_epoch()) << "\n";
 		// long timestamp = cam_buffer->time.time_since_epoch().count();
 		// cam0_wt_file << timestamp << "," << timestamp << ".png " << std::endl;
 		// std::string            cam0_img  = cam0_data_dir.string() + "/" + std::to_string(timestamp) + ".png";
@@ -296,6 +310,7 @@ public:
         assert(isfinite(swapped_pos[1]));
         assert(isfinite(swapped_pos[2]));
 
+		ov_time_csv << cam_buffer->time.time_since_epoch().count() << "," << (_m_rtc->now() - begin_vio).count() / 1e6 << std::endl;
 		if (open_vins_estimator.initialized()) {
 			_m_pose.put(_m_pose.allocate(
 				cam_buffer->time,
@@ -330,6 +345,7 @@ public:
 				<< swapped_rot.x() << ","
 				<< swapped_rot.y() << ","
 				<< swapped_rot.z() << std::endl;
+			// std::cout << "slam\n";
 		}
 		cam_buffer = nullptr;
 	}
@@ -356,6 +372,7 @@ private:
 	std::ofstream cam0_wt_file;
 	std::ofstream cam1_wt_file;
 	std::ofstream slam_csv;
+	std::ofstream ov_time_csv;
 };
 
 PLUGIN_MAIN(slam2)
