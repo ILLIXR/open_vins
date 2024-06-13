@@ -31,8 +31,8 @@
 #include <opencv2/core.hpp>
 #else
 #include <opencv/cv.hpp>
-#endif
 #include <opencv2/core/core.hpp>
+#endif
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/features2d.hpp>
 

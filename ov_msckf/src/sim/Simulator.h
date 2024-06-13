@@ -35,8 +35,8 @@
 #include <opencv2/core.hpp>
 #else
 #include <opencv/cv.hpp>
-#endif
 #include <opencv2/core/core.hpp>
+#endif
 
 
 #include "core/VioManagerOptions.h"
