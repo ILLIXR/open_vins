@@ -25,7 +25,7 @@
 #include "Vec.h"
 #include "LandmarkRepresentation.h"
 #include "utils/colors.h"
-
+#include <cassert>
 
 namespace ov_type {
 

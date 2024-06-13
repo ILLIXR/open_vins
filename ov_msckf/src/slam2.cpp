@@ -166,6 +166,11 @@ VioManagerOptions create_params()
 #else
 	params.slam_options.chi2_multipler = 1;
 	params.slam_options.sigma_pix = 1;
+
+	params.imu_noises.sigma_a = 0.002;  // Accelerometer noise
+	params.imu_noises.sigma_ab = 0.003; // Accelerometer random walk
+	params.imu_noises.sigma_w = 0.00016968;  // Gyroscope noise
+	params.imu_noises.sigma_wb = 1.9393e-05; // Gyroscope random walk
 #endif
 
 	params.use_aruco = false;
@@ -222,14 +227,15 @@ public:
 		open_vins_estimator.feed_measurement_imu(duration2double(datum->time.time_since_epoch()), datum->angular_v, datum->linear_a);
 
 		switchboard::ptr<const cam_type> cam;
-		// Buffered Async:
-		cam = _m_cam.size() == 0 ? nullptr : _m_cam.dequeue();
+		// Camera data can only go downstream when there's at least one IMU sample whose timestamp is larger than the camera data's.
+		cam = (cam_buffer == nullptr && _m_cam.size() > 0) ? _m_cam.dequeue() : nullptr;
 		// If there is not cam data this func call, break early
-		if (!cam) {
+		if (!cam_buffer && !cam) {
 			return;
-		}
-		if (!cam_buffer) {
+		} else if (!cam_buffer && cam) {
 			cam_buffer = cam;
+		}
+		if (cam_buffer->time >= datum->time) {
 			return;
 		}
 
@@ -276,12 +282,13 @@ public:
 				cam_buffer->time,
 				from_seconds(state->_calib_dt_CAMtoIMU->value()(0)),
 				imu_params{
-					.gyro_noise = 0.00016968,
-					.acc_noise = 0.002,
-					.gyro_walk = 1.9393e-05,
-					.acc_walk = 0.003,
+					.gyro_noise = manager_params.imu_noises.sigma_w,
+					.acc_noise = manager_params.imu_noises.sigma_a,
+					.gyro_walk = manager_params.imu_noises.sigma_wb,
+					.acc_walk = manager_params.imu_noises.sigma_ab,
 					.n_gravity = Eigen::Matrix<double,3,1>(0.0, 0.0, -9.81),
 					.imu_integration_sigma = 1.0,
+					// TODO defaults to 200 for EuRoc, needs to change for ZED
 					.nominal_rate = 200.0,
 				},
 				state->_imu->bias_a(),
@@ -291,7 +298,7 @@ public:
 				swapped_rot2
 			));
 		}
-		cam_buffer = cam;
+		cam_buffer = nullptr;
 	}
 
 	~slam2() override = default;

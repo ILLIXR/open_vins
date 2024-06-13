@@ -19,7 +19,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "Feature.h"
-
+#include <cassert>
 
 using namespace ov_core;
 

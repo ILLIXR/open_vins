@@ -23,7 +23,7 @@
 
 
 #include <Eigen/Dense>
-
+#include <cassert>
 
 namespace ov_type {
 
