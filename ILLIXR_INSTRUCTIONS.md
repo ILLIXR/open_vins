@@ -25,7 +25,8 @@ make [opt|dbg]
 
 Now to run OpenVINS Standalone do the following:
 ```
-cd build/ov_msckf
+# opt => <build-type> == RelWithDebInfo, dbg => <build-type> == Debug
+cd build/<build-type>/ov_msckf
 ./run_illixr_msckf <path_to_cam0> <path_to_cam1> <path_to_imu0> <path_to_cam0_images> <path_to_cam1_images>
 ```
 
