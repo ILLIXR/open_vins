@@ -194,7 +194,7 @@ public:
 		, _m_rtc{pb->lookup_impl<RelativeClock>()}
 		, _m_pose{sb->get_writer<pose_type>("slow_pose")}
 		, _m_imu_integrator_input{sb->get_writer<imu_integrator_input>("imu_integrator_input")}
-		, _m_cam{sb->get_buffered_reader<cam_type>("cam")}
+		, _m_cam{sb->get_buffered_reader<binocular_cam_type>("cam")}
 		, open_vins_estimator{manager_params}
 	{
 
@@ -226,7 +226,7 @@ public:
 		// Feed the IMU measurement. There should always be IMU data in each call to feed_imu_cam
 		open_vins_estimator.feed_measurement_imu(duration2double(datum->time.time_since_epoch()), datum->angular_v, datum->linear_a);
 
-		switchboard::ptr<const cam_type> cam;
+		switchboard::ptr<const binocular_cam_type> cam;
 		// Camera data can only go downstream when there's at least one IMU sample whose timestamp is larger than the camera data's.
 		cam = (cam_buffer == nullptr && _m_cam.size() > 0) ? _m_cam.dequeue() : nullptr;
 		// If there is not cam data this func call, break early
@@ -249,8 +249,8 @@ public:
 #warning "No OpenCV metrics available. Please recompile OpenCV from git clone --branch 3.4.6-instrumented https://github.com/ILLIXR/opencv/. (see install_deps.sh)"
 #endif
 
-		cv::Mat img0{cam_buffer->img0};
-		cv::Mat img1{cam_buffer->img1};
+		cv::Mat img0{cam_buffer->at(image::LEFT)};
+		cv::Mat img1{cam_buffer->at(image::RIGHT)};
 		open_vins_estimator.feed_measurement_stereo(duration2double(cam_buffer->time.time_since_epoch()), img0, img1, 0, 1);
 
 		// Get the pose returned from SLAM
@@ -310,8 +310,8 @@ private:
 	switchboard::writer<imu_integrator_input> _m_imu_integrator_input;
 	State *state{};
 
-	switchboard::ptr<const cam_type> cam_buffer;
-	switchboard::buffered_reader<cam_type> _m_cam;
+	switchboard::ptr<const binocular_cam_type> cam_buffer;
+	switchboard::buffered_reader<binocular_cam_type> _m_cam;
 
 	VioManagerOptions manager_params = create_params();
 	VioManager open_vins_estimator;
