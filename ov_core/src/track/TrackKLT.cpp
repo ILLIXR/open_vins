@@ -19,6 +19,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "TrackKLT.h"
+#include <opencv2/video/tracking.hpp>
 
 using namespace ov_core;
 

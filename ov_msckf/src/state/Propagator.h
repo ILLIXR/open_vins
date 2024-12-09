@@ -22,11 +22,13 @@
 #define OV_MSCKF_STATE_PROPAGATOR_H
 
 
+#include <utility>
+
 #include "state/StateHelper.h"
 #include "utils/quat_ops.h"
 
 #ifdef ILLIXR_INTEGRATION
-#include "common/data_format.hpp"
+#include "illixr/data_format.hpp"
 #endif /// ILLIXR_INTEGRATION
 
 
@@ -94,7 +96,7 @@ namespace ov_msckf {
             double sigma_ab_2 = pow(3.0000e-03, 2);
 
             /// Nice print function of what parameters we have loaded
-            void print() {
+            void print() const {
                 printf("\t- gyroscope_noise_density: %.6f\n", sigma_w);
                 printf("\t- accelerometer_noise_density: %.5f\n", sigma_a);
                 printf("\t- gyroscope_random_walk: %.7f\n", sigma_wb);
@@ -109,7 +111,7 @@ namespace ov_msckf {
          * @param noises imu noise characteristics (continuous time)
          * @param gravity Global gravity of the system (normally [0,0,9.81])
          */
-        Propagator(NoiseManager noises, Eigen::Vector3d gravity) : _noises(noises), _gravity(gravity) {
+        Propagator(NoiseManager noises, Eigen::Vector3d gravity) : _noises(noises), _gravity(std::move(gravity)) {
             _noises.sigma_w_2 = std::pow(_noises.sigma_w,2);
             _noises.sigma_a_2 = std::pow(_noises.sigma_a,2);
             _noises.sigma_wb_2 = std::pow(_noises.sigma_wb,2);
@@ -129,8 +131,8 @@ namespace ov_msckf {
             // Create our imu data object
             IMUDATA data;
             data.timestamp = timestamp;
-            data.wm = wm;
-            data.am = am;
+            data.wm = std::move(wm);
+            data.am = std::move(am);
 
             // Append it to our vector
             imu_data.emplace_back(data);
@@ -213,7 +215,7 @@ namespace ov_msckf {
          * @param imu_2 imu at end of interpolation interval
          * @param timestamp Timestamp being interpolated to
          */
-        static IMUDATA interpolate_data(const IMUDATA imu_1, const IMUDATA imu_2, double timestamp) {
+        static IMUDATA interpolate_data(const IMUDATA& imu_1, const IMUDATA& imu_2, double timestamp) {
             // time-distance lambda
             double lambda = (timestamp - imu_1.timestamp) / (imu_2.timestamp - imu_1.timestamp);
             //cout << "lambda - " << lambda << endl;

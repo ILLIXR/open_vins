@@ -22,7 +22,7 @@
 #define OV_CORE_TRACK_DESC_H
 
 
-#include <opencv2/xfeatures2d.hpp>
+#include <opencv2/features2d.hpp>
 
 #include "TrackBase.h"
 

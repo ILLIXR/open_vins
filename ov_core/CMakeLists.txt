@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.8)
+cmake_minimum_required(VERSION 3.16)
 
 option(ILLIXR_INTEGRATION "Flag enabling integrated (non-standalone) mode" OFF)
 
@@ -10,13 +10,16 @@ project(ov_core)
 
 # Include libraries
 find_package(Eigen3 REQUIRED)
-find_package(OpenCV 3 REQUIRED)
+find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system filesystem thread date_time)
 
 # display message to user
-message(STATUS "EIGEN VERSION: " ${EIGEN3_VERSION})
+message(STATUS "EIGEN VERSION: " ${Eigen3_VERSION})
 message(STATUS "OPENCV VERSION: " ${OpenCV_VERSION})
 message(STATUS "BOOST VERSION: " ${Boost_VERSION})
+if(${OpenCV_VERSION_MAJOR} EQUAL 4)
+    add_definitions(-DUSING_OPENCV4)
+endif()
 
 # Describe catkin project
 if (catkin_FOUND)
@@ -31,16 +34,6 @@ else()
 endif()
 
 
-# Try to compile with c++11
-# http://stackoverflow.com/a/25836953
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++17" COMPILER_SUPPORTS_CXX17)
-if(COMPILER_SUPPORTS_CXX11)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
-else()
-    message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++17 support. Please use a different C++ compiler.")
-endif()
-
 # Enable compile optimizations
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fsee -fomit-frame-pointer -fno-signed-zeros -fno-math-errno -funroll-loops")
 
@@ -50,7 +43,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3 -Wall -Wuninitialized")
 # Include our header files
 include_directories(
         src
-        ${EIGEN3_INCLUDE_DIR}
+        ${OpenCV_INCLUDE_DIR}
+        ${EIGEN3_INCLUDE_DIRS}
         ${Boost_INCLUDE_DIRS}
         ${catkin_INCLUDE_DIRS}
 )
@@ -80,8 +74,11 @@ add_library(ov_core_lib SHARED
 )
 target_link_libraries(ov_core_lib ${thirdparty_libraries})
 target_include_directories(ov_core_lib PUBLIC src)
+set_property(TARGET ov_core_lib PROPERTY CXX_STANDARD 17)
 
-
+if(ILLIXR_INTEGRATION)
+    install(TARGETS ov_core_lib DESTINATION lib)
+endif()
 ##################################################
 # Make binary files!
 ##################################################

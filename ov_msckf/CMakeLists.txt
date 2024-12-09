@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.8)
+cmake_minimum_required(VERSION 3.16)
 
 option(ILLIXR_INTEGRATION "Flag enabling integrated (non-standalone) mode" OFF)
 
@@ -13,13 +13,16 @@ project(ov_msckf)
 
 # Include libraries
 find_package(Eigen3 REQUIRED)
-find_package(OpenCV 3 REQUIRED)
+find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system filesystem thread date_time)
 
 # display message to user
-message(STATUS "EIGEN VERSION: " ${EIGEN3_VERSION})
+message(STATUS "EIGEN VERSION: " ${Eigen3_VERSION})
 message(STATUS "OPENCV VERSION: " ${OpenCV_VERSION})
 message(STATUS "BOOST VERSION: " ${Boost_VERSION})
+if(${OpenCV_VERSION_MAJOR} EQUAL 4)
+    add_definitions(-DUSING_OPENCV4)
+endif()
 
 # Describe catkin project
 if (catkin_FOUND)
@@ -33,35 +36,34 @@ else()
     message(WARNING "CATKIN NOT FOUND BUILDING WITHOUT ROS!")
 endif()
 
-# Try to compile with c++11
-# http://stackoverflow.com/a/25836953
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++17" COMPILER_SUPPORTS_CXX17)
-if(COMPILER_SUPPORTS_CXX11)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
-else()
-    message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++17 support. Please use a different C++ compiler.")
-endif()
-
 if (ILLIXR_INTEGRATION)
     # Enable compile optimizations
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DILLIXR_INTEGRATION -O3 -fsee -fomit-frame-pointer -fno-signed-zeros -fno-math-errno -funroll-loops")
     # Enable debug flags (use if you want to debug in gdb)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3 -Wall -Wuninitialized")
+    include_directories(${ILLIXR_ROOT}
+            src
+            ${OpenCV_INCLUDE_DIR}
+            ${EIGEN3_INCLUDE_DIR}
+            ${Boost_INCLUDE_DIRS}
+            ${catkin_INCLUDE_DIRS}
+            )
 else()
     # Enable compile optimizations
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fsee -fomit-frame-pointer -fno-signed-zeros -fno-math-errno -funroll-loops")
     # Enable debug flags (use if you want to debug in gdb)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3 -Wall -Wuninitialized")
+    # Include our header files
+    include_directories(
+            src
+            ${OpenCV_INCLUDE_DIR}
+            ${EIGEN3_INCLUDE_DIR}
+            ${Boost_INCLUDE_DIRS}
+            ${catkin_INCLUDE_DIRS}
+    )
+
 endif()
 
-# Include our header files
-include_directories(
-        src
-        ${EIGEN3_INCLUDE_DIR}
-        ${Boost_INCLUDE_DIRS}
-        ${catkin_INCLUDE_DIRS}
-)
 
 # Set link libraries used by all binaries
 list(APPEND thirdparty_libraries
@@ -100,6 +102,7 @@ endif()
 add_library(ov_msckf_lib SHARED ${library_source_files})
 target_link_libraries(ov_msckf_lib ${thirdparty_libraries})
 target_include_directories(ov_msckf_lib PUBLIC src)
+set_property(TARGET ov_msckf_lib PROPERTY CXX_STANDARD 17)
 
 
 ##################################################
@@ -107,9 +110,22 @@ target_include_directories(ov_msckf_lib PUBLIC src)
 ##################################################
 
 if (ILLIXR_INTEGRATION)
-    add_library(slam2 SHARED src/slam2.cpp)
-    target_link_libraries(slam2 ov_msckf_lib ${thirdparty_libraries})
+    find_package(spdlog REQUIRED)
+    string(TOLOWER "${CMAKE_BUILD_TYPE}" lower_type)
+    if(lower_type MATCHES "debug")
+        set(ILLIXR_BUILD_SUFFIX ".dbg")
+    elseif(lower_type MATCHES "release")
+        set(ILLIXR_BUILD_SUFFIX ".opt")
+    endif()
+    set(PLUGIN_NAME plugin.openvins${ILLIXR_BUILD_SUFFIX})
+    add_library(${PLUGIN_NAME} SHARED src/slam2.cpp)
+    target_include_directories(${PLUGIN_NAME} PUBLIC ${ILLIXR_ROOT})
+    target_link_libraries(${PLUGIN_NAME} ov_msckf_lib ${thirdparty_libraries} spdlog::spdlog)
+    set_property(TARGET ${PLUGIN_NAME} PROPERTY CXX_STANDARD 17)
+    install(TARGETS ov_msckf_lib DESTINATION lib)
+    install(TARGETS ${PLUGIN_NAME} DESTINATION lib)
 else()
     add_executable(run_illixr_msckf src/run_illixr_msckf.cpp)
     target_link_libraries(run_illixr_msckf ov_msckf_lib ${thirdparty_libraries})
+    set_property(TARGET run_illixr_msckf PROPERTY CXX_STANDARD 17)
 endif()

@@ -1,20 +1,20 @@
 #include <functional>
 
-#include <opencv/cv.hpp>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/core.hpp>
 
-#include <math.h>
+#include <cmath>
 #include <eigen3/Eigen/Dense>
+#include <utility>
 
 #include "core/VioManager.h"
 #include "state/State.h"
 
-#include "common/plugin.hpp"
-#include "common/switchboard.hpp"
-#include "common/data_format.hpp"
-#include "common/phonebook.hpp"
-#include "common/relative_clock.hpp"
+#include "illixr/plugin.hpp"
+#include "illixr/switchboard.hpp"
+#include "illixr/data_format.hpp"
+#include "illixr/opencv_data_types.hpp"
+#include "illixr/phonebook.hpp"
+#include "illixr/relative_clock.hpp"
 
 using namespace ILLIXR;
 using namespace ov_msckf;
@@ -189,12 +189,12 @@ class slam2 : public plugin {
 public:
 	/* Provide handles to slam2 */
 	slam2(std::string name_, phonebook* pb_)
-		: plugin{name_, pb_}
+		: plugin{std::move(name_), pb_}
 		, sb{pb->lookup_impl<switchboard>()}
 		, _m_rtc{pb->lookup_impl<RelativeClock>()}
 		, _m_pose{sb->get_writer<pose_type>("slow_pose")}
 		, _m_imu_integrator_input{sb->get_writer<imu_integrator_input>("imu_integrator_input")}
-		, _m_cam{sb->get_buffered_reader<cam_type>("cam")}
+		, _m_cam{sb->get_buffered_reader<binocular_cam_type>("cam")}
 		, open_vins_estimator{manager_params}
 	{
 
@@ -209,15 +209,15 @@ public:
 	}
 
 
-	virtual void start() override {
+	void start() override {
 		plugin::start();
-		sb->schedule<imu_type>(id, "imu", [&](switchboard::ptr<const imu_type> datum, std::size_t iteration_no) {
+		sb->schedule<imu_type>(id, "imu", [&](const switchboard::ptr<const imu_type>& datum, std::size_t iteration_no) {
 			this->feed_imu_cam(datum, iteration_no);
 		});
 	}
 
 
-	void feed_imu_cam(switchboard::ptr<const imu_type> datum, std::size_t iteration_no) {
+	void feed_imu_cam(const switchboard::ptr<const imu_type>& datum, [[maybe_unused]]std::size_t iteration_no) {
 		// Ensures that slam doesnt start before valid IMU readings come in
 		if (datum == nullptr) {
 			return;
@@ -226,7 +226,7 @@ public:
 		// Feed the IMU measurement. There should always be IMU data in each call to feed_imu_cam
 		open_vins_estimator.feed_measurement_imu(duration2double(datum->time.time_since_epoch()), datum->angular_v, datum->linear_a);
 
-		switchboard::ptr<const cam_type> cam;
+		switchboard::ptr<const binocular_cam_type> cam;
 		// Camera data can only go downstream when there's at least one IMU sample whose timestamp is larger than the camera data's.
 		cam = (cam_buffer == nullptr && _m_cam.size() > 0) ? _m_cam.dequeue() : nullptr;
 		// If there is not cam data this func call, break early
@@ -249,8 +249,8 @@ public:
 #warning "No OpenCV metrics available. Please recompile OpenCV from git clone --branch 3.4.6-instrumented https://github.com/ILLIXR/opencv/. (see install_deps.sh)"
 #endif
 
-		cv::Mat img0{cam_buffer->img0};
-		cv::Mat img1{cam_buffer->img1};
+		cv::Mat img0{cam_buffer->at(image::LEFT)};
+		cv::Mat img1{cam_buffer->at(image::RIGHT)};
 		open_vins_estimator.feed_measurement_stereo(duration2double(cam_buffer->time.time_since_epoch()), img0, img1, 0, 1);
 
 		// Get the pose returned from SLAM
@@ -301,17 +301,17 @@ public:
 		cam_buffer = nullptr;
 	}
 
-	virtual ~slam2() override {}
+	~slam2() override = default;
 
 private:
 	const std::shared_ptr<switchboard> sb;
 	std::shared_ptr<RelativeClock> _m_rtc; 
 	switchboard::writer<pose_type> _m_pose;
 	switchboard::writer<imu_integrator_input> _m_imu_integrator_input;
-	State *state;
+	State *state{};
 
-	switchboard::ptr<const cam_type> cam_buffer;
-	switchboard::buffered_reader<cam_type> _m_cam;
+	switchboard::ptr<const binocular_cam_type> cam_buffer;
+	switchboard::buffered_reader<binocular_cam_type> _m_cam;
 
 	VioManagerOptions manager_params = create_params();
 	VioManager open_vins_estimator;

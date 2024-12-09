@@ -276,7 +276,11 @@ void TrackAruco::display_active(cv::Mat &img_out, int r1, int g1, int b1, int r2
         std::unique_lock<std::mutex> lck(mtx_feeds.at(pair.first));
         // select the subset of the image
         cv::Mat img_temp;
+#ifdef USING_OPENCV4
+        if(image_new) cv::cvtColor(img_last_cache[pair.first], img_temp, cv::COLOR_GRAY2RGB);
+#else
         if(image_new) cv::cvtColor(img_last_cache[pair.first], img_temp, CV_GRAY2RGB);
+#endif
         else img_temp = img_out(cv::Rect(max_width*index_cam,0,max_width,max_height));
         // draw...
         if(!ids_aruco[pair.first].empty()) cv::aruco::drawDetectedMarkers(img_temp, corners[pair.first], ids_aruco[pair.first]);
