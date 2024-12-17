@@ -8,7 +8,11 @@ find_package(catkin QUIET COMPONENTS roscpp rospy geometry_msgs nav_msgs sensor_
 
 # Include libraries
 find_package(Eigen3 REQUIRED)
-find_package(Boost REQUIRED COMPONENTS system filesystem thread date_time)
+if (CMAKE_VERSION VERSION_LESS "3.30.0")
+    find_package(Boost REQUIRED COMPONENTS system filesystem thread date_time)
+else()
+    find_package(Boost REQUIRED COMPONENTS system filesystem thread date_time CONFIG)
+endif()
 
 # display message to user
 message(STATUS "EIGEN VERSION: " ${EIGEN3_VERSION})
