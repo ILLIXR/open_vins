@@ -28,7 +28,10 @@
 #include <iostream>
 #include <string>
 
-namespace ov_core {
+#ifdef ILLIXR_INTEGRATION
+#include <spdlog/spdlog.h>
+
+#else
 
 /**
  * @brief Printer for open_vins that allows for various levels of printing to be done
@@ -83,7 +86,7 @@ private:
 };
 
 } /* namespace ov_core */
-
+#endif
 /*
  * Converts anything to a string
  */
@@ -93,10 +96,18 @@ private:
 /*
  * The different Types of print levels
  */
+#ifdef ILLIXR_INTEGRATION
+#define PRINT_ALL(x...) spdlog::get("illixr")->info(x);
+#define PRINT_DEBUG(x...) spdlog::get("illixr")->debug(x);
+#define PRINT_INFO(x...) spdlog::get("illixr")->info(x);
+#define PRINT_WARNING(x...) spdlog::get("illixr")->warn(x);
+#define PRINT_ERROR(x...) spdlog::get("illixr")->error(x);
+#else  // ILLIXR_INTEGRATION
 #define PRINT_ALL(x...) ov_core::Printer::debugPrint(ov_core::Printer::PrintLevel::ALL, __FILE__, TOSTRING(__LINE__), x);
 #define PRINT_DEBUG(x...) ov_core::Printer::debugPrint(ov_core::Printer::PrintLevel::DEBUG, __FILE__, TOSTRING(__LINE__), x);
 #define PRINT_INFO(x...) ov_core::Printer::debugPrint(ov_core::Printer::PrintLevel::INFO, __FILE__, TOSTRING(__LINE__), x);
 #define PRINT_WARNING(x...) ov_core::Printer::debugPrint(ov_core::Printer::PrintLevel::WARNING, __FILE__, TOSTRING(__LINE__), x);
 #define PRINT_ERROR(x...) ov_core::Printer::debugPrint(ov_core::Printer::PrintLevel::ERROR, __FILE__, TOSTRING(__LINE__), x);
+#endif  // ILLIXR_INTEGRATION
 
 #endif /* OV_CORE_PRINT_H */

@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.3)
 
 # Find ROS build system
-find_package(catkin QUIET COMPONENTS roscpp rosbag sensor_msgs cv_bridge)
+if (catkin_FOUND)
+    find_package(catkin QUIET COMPONENTS roscpp rosbag sensor_msgs cv_bridge)
+endif()
 
 # Describe ROS project
 if (catkin_FOUND AND ENABLE_ROS)
@@ -20,14 +22,24 @@ else ()
     set(CATKIN_GLOBAL_INCLUDE_DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/open_vins/")
 endif ()
 
-# Include our header files
-include_directories(
-        src
-        ${EIGEN3_INCLUDE_DIR}
-        ${Boost_INCLUDE_DIRS}
-        ${catkin_INCLUDE_DIRS}
-)
-
+if (ILLIXR_INTEGRATION)
+    # Include our header files
+    include_directories(
+            src
+            ${ILLIXR_ROOT}
+            ${EIGEN3_INCLUDE_DIR}
+            ${Boost_INCLUDE_DIRS}
+            ${catkin_INCLUDE_DIRS}
+    )
+else()
+    # Include our header files
+    include_directories(
+            src
+            ${EIGEN3_INCLUDE_DIR}
+            ${Boost_INCLUDE_DIRS}
+            ${catkin_INCLUDE_DIRS}
+    )
+endif()
 # Set link libraries used by all binaries
 list(APPEND thirdparty_libraries
         ${Boost_LIBRARIES}
@@ -73,7 +85,7 @@ install(DIRECTORY src/
 # Make binary files!
 ##################################################
 
-if (catkin_FOUND AND ENABLE_ROS)
+if (catkin_FOUND AND ENABLE_ROS AND ENABLE_TESTS)
 
     add_executable(test_tracking src/test_tracking.cpp)
     target_link_libraries(test_tracking ov_core_lib ${thirdparty_libraries})
@@ -85,21 +97,20 @@ if (catkin_FOUND AND ENABLE_ROS)
 
 endif ()
 
-add_executable(test_webcam src/test_webcam.cpp)
-target_link_libraries(test_webcam ov_core_lib ${thirdparty_libraries})
-install(TARGETS test_webcam
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+if (ENABLE_TESTS)
+    add_executable(test_webcam src/test_webcam.cpp)
+    target_link_libraries(test_webcam ov_core_lib ${thirdparty_libraries})
+    install(TARGETS test_webcam
+            ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+            LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+            RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
 
 add_executable(test_profile src/test_profile.cpp)
-target_link_libraries(test_profile ov_core_lib ${thirdparty_libraries})
-install(TARGETS test_profile
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
-
-
+    target_link_libraries(test_profile ov_core_lib ${thirdparty_libraries})
+    install(TARGETS test_profile
+            ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+            LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+            RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+endif()

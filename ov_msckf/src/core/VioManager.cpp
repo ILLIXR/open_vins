@@ -50,9 +50,9 @@ using namespace ov_msckf;
 VioManager::VioManager(VioManagerOptions &params_) : thread_init_running(false), thread_init_success(false) {
 
   // Nice startup message
-  PRINT_DEBUG("=======================================\n");
-  PRINT_DEBUG("OPENVINS ON-MANIFOLD EKF IS STARTING\n");
-  PRINT_DEBUG("=======================================\n");
+  PRINT_DEBUG("=======================================\n")
+  PRINT_DEBUG("OPENVINS ON-MANIFOLD EKF IS STARTING\n")
+  PRINT_DEBUG("=======================================\n")
 
   // Nice debug
   this->params = params_;
@@ -106,7 +106,7 @@ VioManager::VioManager(VioManagerOptions &params_) : thread_init_running(false),
     // If the file exists, then delete it
     if (boost::filesystem::exists(params.record_timing_filepath)) {
       boost::filesystem::remove(params.record_timing_filepath);
-      PRINT_INFO(YELLOW "[STATS]: found old file found, deleted...\n" RESET);
+      PRINT_INFO(YELLOW "[STATS]: found old file found, deleted...\n" RESET)
     }
     // Create the directory that we will open the file in
     boost::filesystem::path p(params.record_timing_filepath);
@@ -114,7 +114,7 @@ VioManager::VioManager(VioManagerOptions &params_) : thread_init_running(false),
     // Open our statistics file!
     of_statistics.open(params.record_timing_filepath, std::ofstream::out | std::ofstream::app);
     // Write the header information into it
-    of_statistics << "# timestamp (sec),tracking,propagation,msckf update,";
+    of_statistics << "# timestamp (ms),tracking,propagation,msckf update,";
     if (state->_options.max_slam_features > 0) {
       of_statistics << "slam update,slam delayed,";
     }
@@ -161,6 +161,11 @@ VioManager::VioManager(VioManagerOptions &params_) : thread_init_running(false),
                                                         propagator, params.gravity_mag, params.zupt_max_velocity,
                                                         params.zupt_noise_multiplier, params.zupt_max_disparity);
   }
+    // Init timing info
+    total_images = 0;
+    total_tracking_time = 0.0;
+    total_filter_time = 0.0;
+    total_frame_time = 0.0;
 }
 
 void VioManager::feed_measurement_imu(const ov_core::ImuData &message) {
@@ -208,7 +213,7 @@ void VioManager::feed_measurement_simulation(double timestamp, const std::vector
                                                           propagator, params.gravity_mag, params.zupt_max_velocity,
                                                           params.zupt_noise_multiplier, params.zupt_max_disparity);
     }
-    PRINT_WARNING(RED "[SIM]: casting our tracker to a TrackSIM object!\n" RESET);
+    PRINT_WARNING(RED "[SIM]: casting our tracker to a TrackSIM object!\n" RESET)
   }
 
   // Feed our simulation tracker
@@ -234,8 +239,8 @@ void VioManager::feed_measurement_simulation(double timestamp, const std::vector
 
   // If we do not have VIO initialization, then return an error
   if (!is_initialized_vio) {
-    PRINT_ERROR(RED "[SIM]: your vio system should already be initialized before simulating features!!!\n" RESET);
-    PRINT_ERROR(RED "[SIM]: initialize your system first before calling feed_measurement_simulation()!!!!\n" RESET);
+    PRINT_ERROR(RED "[SIM]: your vio system should already be initialized before simulating features!!!\n" RESET)
+    PRINT_ERROR(RED "[SIM]: initialize your system first before calling feed_measurement_simulation()!!!!\n" RESET)
     std::exit(EXIT_FAILURE);
   }
 
@@ -311,7 +316,7 @@ void VioManager::track_image_and_update(const ov_core::CameraData &message_const
     is_initialized_vio = try_to_initialize(message);
     if (!is_initialized_vio) {
       double time_track = (rT2 - rT1).total_microseconds() * 1e-6;
-      PRINT_DEBUG(BLUE "[TIME]: %.4f seconds for tracking\n" RESET, time_track);
+      PRINT_DEBUG(BLUE "[TIME]: %.4f seconds for tracking\n" RESET, time_track)
       return;
     }
   }
@@ -329,7 +334,7 @@ void VioManager::do_feature_propagate_update(const ov_core::CameraData &message)
   // Return if the camera measurement is out of order
   if (state->_timestamp > message.timestamp) {
     PRINT_WARNING(YELLOW "image received out of order, unable to do anything (prop dt = %3f)\n" RESET,
-                  (message.timestamp - state->_timestamp));
+                  (message.timestamp - state->_timestamp))
     return;
   }
 
@@ -347,14 +352,14 @@ void VioManager::do_feature_propagate_update(const ov_core::CameraData &message)
   // We can start processing things when we have at least 5 clones since we can start triangulating things...
   if ((int)state->_clones_IMU.size() < std::min(state->_options.max_clone_size, 5)) {
     PRINT_DEBUG("waiting for enough clone states (%d of %d)....\n", (int)state->_clones_IMU.size(),
-                std::min(state->_options.max_clone_size, 5));
+                std::min(state->_options.max_clone_size, 5))
     return;
   }
 
   // Return if we where unable to propagate
   if (state->_timestamp != message.timestamp) {
-    PRINT_WARNING(RED "[PROP]: Propagator unable to propagate the state forward in time!\n" RESET);
-    PRINT_WARNING(RED "[PROP]: It has been %.3f since last time we propagated\n" RESET, message.timestamp - state->_timestamp);
+    PRINT_WARNING(RED "[PROP]: Propagator unable to propagate the state forward in time!\n" RESET)
+    PRINT_WARNING(RED "[PROP]: It has been %.3f since last time we propagated\n" RESET, message.timestamp - state->_timestamp)
     return;
   }
   has_moved_since_zupt = true;
@@ -601,23 +606,24 @@ void VioManager::do_feature_propagate_update(const ov_core::CameraData &message)
   //===================================================================================
 
   // Get timing statitics information
-  double time_track = (rT2 - rT1).total_microseconds() * 1e-6;
-  double time_prop = (rT3 - rT2).total_microseconds() * 1e-6;
-  double time_msckf = (rT4 - rT3).total_microseconds() * 1e-6;
-  double time_slam_update = (rT5 - rT4).total_microseconds() * 1e-6;
-  double time_slam_delay = (rT6 - rT5).total_microseconds() * 1e-6;
-  double time_marg = (rT7 - rT6).total_microseconds() * 1e-6;
-  double time_total = (rT7 - rT1).total_microseconds() * 1e-6;
+  double time_track = (rT2 - rT1).total_microseconds() * 1e-3;
+  double time_prop = (rT3 - rT2).total_microseconds() * 1e-3;
+  double time_msckf = (rT4 - rT3).total_microseconds() * 1e-3;
+  double time_slam_update = (rT5 - rT4).total_microseconds() * 1e-3;
+  double time_slam_delay = (rT6 - rT5).total_microseconds() * 1e-3;
+  double time_marg = (rT7 - rT6).total_microseconds() * 1e-3;
+  double time_total = (rT7 - rT1).total_microseconds() * 1e-3;
 
   // Timing information
-  PRINT_DEBUG(BLUE "[TIME]: %.4f seconds for tracking\n" RESET, time_track);
-  PRINT_DEBUG(BLUE "[TIME]: %.4f seconds for propagation\n" RESET, time_prop);
-  PRINT_DEBUG(BLUE "[TIME]: %.4f seconds for MSCKF update (%d feats)\n" RESET, time_msckf, (int)featsup_MSCKF.size());
+  PRINT_DEBUG(BLUE "[TIME]: %.4f ms for tracking\n" RESET, time_track)
+  PRINT_DEBUG(BLUE "[TIME]: %.4f ms for propagation\n" RESET, time_prop)
+  PRINT_DEBUG(BLUE "[TIME]: %.4f ms for MSCKF update (%d features)\n" RESET, time_msckf, (int)featsup_MSCKF.size())
   if (state->_options.max_slam_features > 0) {
-    PRINT_DEBUG(BLUE "[TIME]: %.4f seconds for SLAM update (%d feats)\n" RESET, time_slam_update, (int)state->_features_SLAM.size());
-    PRINT_DEBUG(BLUE "[TIME]: %.4f seconds for SLAM delayed init (%d feats)\n" RESET, time_slam_delay, (int)feats_slam_DELAYED.size());
+    PRINT_DEBUG(BLUE "[TIME]: %.4f ms for SLAM update (%d feats)\n" RESET, time_slam_update, (int)state->_features_SLAM.size())
+    PRINT_DEBUG(BLUE "[TIME]: %.4f ms for SLAM delayed init (%d feats)\n" RESET, time_slam_delay, (int)feats_slam_DELAYED.size())
   }
-  PRINT_DEBUG(BLUE "[TIME]: %.4f seconds for re-tri & marg (%d clones in state)\n" RESET, time_marg, (int)state->_clones_IMU.size());
+  PRINT_DEBUG(BLUE "[TIME]: %.4f ms for re-tri & marg (%d clones in state)\n" RESET, time_marg, (int)state->_clones_IMU.size())
+  PRINT_DEBUG(BLUE "[TIME]: %.4f ms for total\n" RESET, time_total)
 
   std::stringstream ss;
   ss << "[TIME]: " << std::setprecision(4) << time_total << " seconds for total (camera";
@@ -625,7 +631,19 @@ void VioManager::do_feature_propagate_update(const ov_core::CameraData &message)
     ss << " " << id;
   }
   ss << ")" << std::endl;
-  PRINT_DEBUG(BLUE "%s" RESET, ss.str().c_str());
+  PRINT_DEBUG(BLUE "%s" RESET, ss.str().c_str())
+
+    // Keep track of average
+    total_images++;
+    total_tracking_time += time_track;
+    total_filter_time += (time_total - time_track);
+    total_frame_time += time_total;
+
+    // Average time breakdown between frontend and backend
+  PRINT_DEBUG(GREEN "[AVG-TIME]: %.4f ms for tracking\n" RESET, total_tracking_time / (double) total_images)
+  PRINT_DEBUG(GREEN "[AVG-TIME]: %.4f ms for filter\n" RESET, total_filter_time / (double) total_images)
+  PRINT_DEBUG(GREEN "[AVG-TIME]: %.4f ms for total\n" RESET, total_frame_time / (double) total_images)
+
 
   // Finally if we are saving stats to file, lets save it to file
   if (params.record_timing_information && of_statistics.is_open()) {
@@ -651,23 +669,25 @@ void VioManager::do_feature_propagate_update(const ov_core::CameraData &message)
   timelastupdate = message.timestamp;
 
   // Debug, print our current state
-  PRINT_INFO("q_GtoI = %.3f,%.3f,%.3f,%.3f | p_IinG = %.3f,%.3f,%.3f | dist = %.2f (meters)\n", state->_imu->quat()(0),
-             state->_imu->quat()(1), state->_imu->quat()(2), state->_imu->quat()(3), state->_imu->pos()(0), state->_imu->pos()(1),
-             state->_imu->pos()(2), distance);
-  PRINT_INFO("bg = %.4f,%.4f,%.4f | ba = %.4f,%.4f,%.4f\n", state->_imu->bias_g()(0), state->_imu->bias_g()(1), state->_imu->bias_g()(2),
-             state->_imu->bias_a()(0), state->_imu->bias_a()(1), state->_imu->bias_a()(2));
+  PRINT_INFO("q_GtoI = %.3f,%.3f,%.3f,%.3f | p_IinG = %.3f,%.3f,%.3f | dist = %.2f (meters)\n",
+             state->_imu->quat()(0), state->_imu->quat()(1), state->_imu->quat()(2), state->_imu->quat()(3),
+             state->_imu->pos()(0), state->_imu->pos()(1), state->_imu->pos()(2), distance)
+  PRINT_INFO("bg = %.4f,%.4f,%.4f | ba = %.4f,%.4f,%.4f\n",
+             state->_imu->bias_g()(0), state->_imu->bias_g()(1), state->_imu->bias_g()(2),
+             state->_imu->bias_a()(0), state->_imu->bias_a()(1), state->_imu->bias_a()(2))
 
   // Debug for camera imu offset
   if (state->_options.do_calib_camera_timeoffset) {
-    PRINT_INFO("camera-imu timeoffset = %.5f\n", state->_calib_dt_CAMtoIMU->value()(0));
+    PRINT_INFO("camera-imu timeoffset = %.5f\n", state->_calib_dt_CAMtoIMU->value()(0))
   }
 
   // Debug for camera intrinsics
   if (state->_options.do_calib_camera_intrinsics) {
     for (int i = 0; i < state->_options.num_cameras; i++) {
       std::shared_ptr<Vec> calib = state->_cam_intrinsics.at(i);
-      PRINT_INFO("cam%d intrinsics = %.3f,%.3f,%.3f,%.3f | %.3f,%.3f,%.3f,%.3f\n", (int)i, calib->value()(0), calib->value()(1),
-                 calib->value()(2), calib->value()(3), calib->value()(4), calib->value()(5), calib->value()(6), calib->value()(7));
+      PRINT_INFO("cam%d intrinsics = %.3f,%.3f,%.3f,%.3f | %.3f,%.3f,%.3f,%.3f\n", (int)i,
+                 calib->value()(0), calib->value()(1), calib->value()(2), calib->value()(3),
+                 calib->value()(4), calib->value()(5), calib->value()(6), calib->value()(7))
     }
   }
 
@@ -675,40 +695,47 @@ void VioManager::do_feature_propagate_update(const ov_core::CameraData &message)
   if (state->_options.do_calib_camera_pose) {
     for (int i = 0; i < state->_options.num_cameras; i++) {
       std::shared_ptr<PoseJPL> calib = state->_calib_IMUtoCAM.at(i);
-      PRINT_INFO("cam%d extrinsics = %.3f,%.3f,%.3f,%.3f | %.3f,%.3f,%.3f\n", (int)i, calib->quat()(0), calib->quat()(1), calib->quat()(2),
-                 calib->quat()(3), calib->pos()(0), calib->pos()(1), calib->pos()(2));
+      PRINT_INFO("cam%d extrinsics = %.3f,%.3f,%.3f,%.3f | %.3f,%.3f,%.3f\n", (int)i,
+                 calib->quat()(0), calib->quat()(1), calib->quat()(2), calib->quat()(3),
+                 calib->pos()(0), calib->pos()(1), calib->pos()(2))
     }
   }
 
   // Debug for imu intrinsics
   if (state->_options.do_calib_imu_intrinsics && state->_options.imu_model == StateOptions::ImuModel::KALIBR) {
-    PRINT_INFO("q_GYROtoI = %.3f,%.3f,%.3f,%.3f\n", state->_calib_imu_GYROtoIMU->value()(0), state->_calib_imu_GYROtoIMU->value()(1),
-               state->_calib_imu_GYROtoIMU->value()(2), state->_calib_imu_GYROtoIMU->value()(3));
+    PRINT_INFO("q_GYROtoI = %.3f,%.3f,%.3f,%.3f\n",
+               state->_calib_imu_GYROtoIMU->value()(0), state->_calib_imu_GYROtoIMU->value()(1),
+               state->_calib_imu_GYROtoIMU->value()(2), state->_calib_imu_GYROtoIMU->value()(3))
   }
   if (state->_options.do_calib_imu_intrinsics && state->_options.imu_model == StateOptions::ImuModel::RPNG) {
-    PRINT_INFO("q_ACCtoI = %.3f,%.3f,%.3f,%.3f\n", state->_calib_imu_ACCtoIMU->value()(0), state->_calib_imu_ACCtoIMU->value()(1),
-               state->_calib_imu_ACCtoIMU->value()(2), state->_calib_imu_ACCtoIMU->value()(3));
+    PRINT_INFO("q_ACCtoI = %.3f,%.3f,%.3f,%.3f\n",
+               state->_calib_imu_ACCtoIMU->value()(0), state->_calib_imu_ACCtoIMU->value()(1),
+               state->_calib_imu_ACCtoIMU->value()(2), state->_calib_imu_ACCtoIMU->value()(3))
   }
   if (state->_options.do_calib_imu_intrinsics && state->_options.imu_model == StateOptions::ImuModel::KALIBR) {
-    PRINT_INFO("Dw = | %.4f,%.4f,%.4f | %.4f,%.4f | %.4f |\n", state->_calib_imu_dw->value()(0), state->_calib_imu_dw->value()(1),
+    PRINT_INFO("Dw = | %.4f,%.4f,%.4f | %.4f,%.4f | %.4f |\n",
+               state->_calib_imu_dw->value()(0), state->_calib_imu_dw->value()(1),
                state->_calib_imu_dw->value()(2), state->_calib_imu_dw->value()(3), state->_calib_imu_dw->value()(4),
-               state->_calib_imu_dw->value()(5));
-    PRINT_INFO("Da = | %.4f,%.4f,%.4f | %.4f,%.4f | %.4f |\n", state->_calib_imu_da->value()(0), state->_calib_imu_da->value()(1),
+               state->_calib_imu_dw->value()(5))
+    PRINT_INFO("Da = | %.4f,%.4f,%.4f | %.4f,%.4f | %.4f |\n",
+               state->_calib_imu_da->value()(0), state->_calib_imu_da->value()(1),
                state->_calib_imu_da->value()(2), state->_calib_imu_da->value()(3), state->_calib_imu_da->value()(4),
-               state->_calib_imu_da->value()(5));
+               state->_calib_imu_da->value()(5))
   }
   if (state->_options.do_calib_imu_intrinsics && state->_options.imu_model == StateOptions::ImuModel::RPNG) {
-    PRINT_INFO("Dw = | %.4f | %.4f,%.4f | %.4f,%.4f,%.4f |\n", state->_calib_imu_dw->value()(0), state->_calib_imu_dw->value()(1),
+    PRINT_INFO("Dw = | %.4f | %.4f,%.4f | %.4f,%.4f,%.4f |\n",
+               state->_calib_imu_dw->value()(0), state->_calib_imu_dw->value()(1),
                state->_calib_imu_dw->value()(2), state->_calib_imu_dw->value()(3), state->_calib_imu_dw->value()(4),
-               state->_calib_imu_dw->value()(5));
-    PRINT_INFO("Da = | %.4f | %.4f,%.4f | %.4f,%.4f,%.4f |\n", state->_calib_imu_da->value()(0), state->_calib_imu_da->value()(1),
+               state->_calib_imu_dw->value()(5))
+    PRINT_INFO("Da = | %.4f | %.4f,%.4f | %.4f,%.4f,%.4f |\n",
+               state->_calib_imu_da->value()(0), state->_calib_imu_da->value()(1),
                state->_calib_imu_da->value()(2), state->_calib_imu_da->value()(3), state->_calib_imu_da->value()(4),
-               state->_calib_imu_da->value()(5));
+               state->_calib_imu_da->value()(5))
   }
   if (state->_options.do_calib_imu_intrinsics && state->_options.do_calib_imu_g_sensitivity) {
     PRINT_INFO("Tg = | %.4f,%.4f,%.4f |  %.4f,%.4f,%.4f | %.4f,%.4f,%.4f |\n", state->_calib_imu_tg->value()(0),
                state->_calib_imu_tg->value()(1), state->_calib_imu_tg->value()(2), state->_calib_imu_tg->value()(3),
                state->_calib_imu_tg->value()(4), state->_calib_imu_tg->value()(5), state->_calib_imu_tg->value()(6),
-               state->_calib_imu_tg->value()(7), state->_calib_imu_tg->value()(8));
+               state->_calib_imu_tg->value()(7), state->_calib_imu_tg->value()(8))
   }
 }

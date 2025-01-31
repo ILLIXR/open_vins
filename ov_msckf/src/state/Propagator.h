@@ -27,6 +27,10 @@
 #include <mutex>
 
 #include "utils/sensor_data.h"
+#ifdef ILLIXR_INTEGRATION
+#include "illixr/data_format.hpp"
+#endif /// ILLIXR_INTEGRATION
+
 
 #include "utils/NoiseManager.h"
 
@@ -125,7 +129,11 @@ public:
   bool fast_state_propagate(std::shared_ptr<State> state, double timestamp, Eigen::Matrix<double, 13, 1> &state_plus,
                             Eigen::Matrix<double, 12, 12> &covariance);
 
-  /**
+    Eigen::Matrix<double, 3, 1> get_gravity() {
+        return _gravity;
+    }
+
+    /**
    * @brief Helper function that given current imu data, will select imu readings between the two times.
    *
    * This will create measurements that we will integrate with, and an extra measurement at the end.

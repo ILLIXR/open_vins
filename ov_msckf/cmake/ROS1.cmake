@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.3)
 
 # Find ROS build system
-find_package(catkin QUIET COMPONENTS roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs image_transport cv_bridge ov_core ov_init)
+if (catkin_FOUND)
+    find_package(catkin QUIET COMPONENTS roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs image_transport cv_bridge ov_core ov_init)
+endif()
 
 # Describe ROS project
 if (catkin_FOUND AND ENABLE_ROS)
@@ -21,14 +23,28 @@ else ()
 endif ()
 
 
-# Include our header files
-include_directories(
-        src
-        ${EIGEN3_INCLUDE_DIR}
-        ${Boost_INCLUDE_DIRS}
-        ${CERES_INCLUDE_DIRS}
-        ${catkin_INCLUDE_DIRS}
-)
+if (ILLIXR_INTEGRATION)
+    # Include our header files
+    include_directories(
+            src
+            ${ILLIXR_ROOT}
+            ${OpenCV_INCLUDE_DIR}
+            ${EIGEN3_INCLUDE_DIR}
+            ${Boost_INCLUDE_DIRS}
+            ${CERES_INCLUDE_DIRS}
+            ${catkin_INCLUDE_DIRS}
+    )
+else()
+    # Include our header files
+    include_directories(
+            src
+            ${OpenCV_INCLUDE_DIR}
+            ${EIGEN3_INCLUDE_DIR}
+            ${Boost_INCLUDE_DIRS}
+            ${CERES_INCLUDE_DIRS}
+            ${catkin_INCLUDE_DIRS}
+    )
+endif()
 
 # Set link libraries used by all binaries
 list(APPEND thirdparty_libraries
@@ -50,12 +66,19 @@ if (NOT catkin_FOUND OR NOT ENABLE_ROS)
     list(FILTER OVCORE_LIBRARY_SOURCES EXCLUDE REGEX ".*test_webcam\\.cpp$")
     list(FILTER OVCORE_LIBRARY_SOURCES EXCLUDE REGEX ".*test_tracking\\.cpp$")
     list(APPEND LIBRARY_SOURCES ${OVCORE_LIBRARY_SOURCES})
-    include_directories(${CMAKE_SOURCE_DIR}/../ov_core/src/)
-    install(DIRECTORY ${CMAKE_SOURCE_DIR}/../ov_core/src/
-            DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}
-            FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
-    )
-
+    if (ILLIXR_INTEGRATION)
+        include_directories(${CMAKE_SOURCE_DIR}/ov_core/src/)
+        install(DIRECTORY ${CMAKE_SOURCE_DIR}/ov_core/src/
+                DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}
+                FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+        )
+    else()
+        include_directories(${CMAKE_SOURCE_DIR}/../ov_core/src/)
+        install(DIRECTORY ${CMAKE_SOURCE_DIR}/../ov_core/src/
+                DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}
+                FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+        )
+    endif()
     message(STATUS "MANUALLY LINKING TO OV_INIT LIBRARY....")
     file(GLOB_RECURSE OVINIT_LIBRARY_SOURCES "${CMAKE_SOURCE_DIR}/../ov_init/src/*.cpp")
     list(FILTER OVINIT_LIBRARY_SOURCES EXCLUDE REGEX ".*test_dynamic_init\\.cpp$")
@@ -63,11 +86,19 @@ if (NOT catkin_FOUND OR NOT ENABLE_ROS)
     list(FILTER OVINIT_LIBRARY_SOURCES EXCLUDE REGEX ".*test_simulation\\.cpp$")
     list(FILTER OVINIT_LIBRARY_SOURCES EXCLUDE REGEX ".*Simulator\\.cpp$")
     list(APPEND LIBRARY_SOURCES ${OVINIT_LIBRARY_SOURCES})
-    include_directories(${CMAKE_SOURCE_DIR}/../ov_init/src/)
-    install(DIRECTORY ${CMAKE_SOURCE_DIR}/../ov_init/src/
-            DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}
-            FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
-    )
+    if (ILLIXR_INTEGRATION)
+        include_directories(${CMAKE_SOURCE_DIR}/ov_init/src/)
+        install(DIRECTORY ${CMAKE_SOURCE_DIR}/ov_init/src/
+                DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}
+                FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+        )
+    else()
+        include_directories(${CMAKE_SOURCE_DIR}/../ov_init/src/)
+        install(DIRECTORY ${CMAKE_SOURCE_DIR}/../ov_init/src/
+                DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}
+                FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+        )
+    endif()
 
 endif ()
 
@@ -127,34 +158,42 @@ if (catkin_FOUND AND ENABLE_ROS)
             LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
             RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
-    
+
     install(DIRECTORY launch/
             DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
     )
 
 endif ()
 
-add_executable(run_simulation src/run_simulation.cpp)
-target_link_libraries(run_simulation ov_msckf_lib ${thirdparty_libraries})
-install(TARGETS run_simulation
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+if (ILLIXR_INTEGRATION)
+    set(PLUGIN_NAME plugin.openvins${ILLIXR_BUILD_SUFFIX})
+    add_library(${PLUGIN_NAME} SHARED src/slam2.cpp)
+    target_include_directories(${PLUGIN_NAME} PUBLIC ${ILLIXR_ROOT})
+    target_link_libraries(${PLUGIN_NAME} ov_msckf_lib ${thirdparty_libraries} spdlog::spdlog)
+    set_property(TARGET ${PLUGIN_NAME} PROPERTY CXX_STANDARD 17)
+    install(TARGETS ov_msckf_lib DESTINATION lib)
+    install(TARGETS ${PLUGIN_NAME} DESTINATION lib)
 
-add_executable(test_sim_meas src/test_sim_meas.cpp)
-target_link_libraries(test_sim_meas ov_msckf_lib ${thirdparty_libraries})
-install(TARGETS test_sim_meas
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+else()
+    add_executable(run_illixr_msckf src/run_illixr_msckf.cpp)
+    target_link_libraries(run_illixr_msckf ov_msckf_lib ${thirdparty_libraries})
+    set_property(TARGET run_illixr_msckf PROPERTY CXX_STANDARD 17)
+endif()
 
-add_executable(test_sim_repeat src/test_sim_repeat.cpp)
-target_link_libraries(test_sim_repeat ov_msckf_lib ${thirdparty_libraries})
-install(TARGETS test_sim_repeat
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+if (ENABLE_TESTS)
+    add_executable(test_sim_meas src/test_sim_meas.cpp)
+    target_link_libraries(test_sim_meas ov_msckf_lib ${thirdparty_libraries})
+    install(TARGETS test_sim_meas
+            ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+            LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+            RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
 
+    add_executable(test_sim_repeat src/test_sim_repeat.cpp)
+    target_link_libraries(test_sim_repeat ov_msckf_lib ${thirdparty_libraries})
+    install(TARGETS test_sim_repeat
+            ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+            LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+            RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    )
+endif()

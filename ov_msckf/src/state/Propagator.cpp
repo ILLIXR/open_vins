@@ -35,14 +35,14 @@ void Propagator::propagate_and_clone(std::shared_ptr<State> state, double timest
   // If the difference between the current update time and state is zero
   // We should crash, as this means we would have two clones at the same time!!!!
   if (state->_timestamp == timestamp) {
-    PRINT_ERROR(RED "Propagator::propagate_and_clone(): Propagation called again at same timestep at last update timestep!!!!\n" RESET);
+    PRINT_ERROR(RED "Propagator::propagate_and_clone(): Propagation called again at same timestep at last update timestep!!!!\n" RESET)
     std::exit(EXIT_FAILURE);
   }
 
   // We should crash if we are trying to propagate backwards
   if (state->_timestamp > timestamp) {
-    PRINT_ERROR(RED "Propagator::propagate_and_clone(): Propagation called trying to propagate backwards in time!!!!\n" RESET);
-    PRINT_ERROR(RED "Propagator::propagate_and_clone(): desired propagation = %.4f\n" RESET, (timestamp - state->_timestamp));
+    PRINT_ERROR(RED "Propagator::propagate_and_clone(): Propagation called trying to propagate backwards in time!!!!\n" RESET)
+    PRINT_ERROR(RED "Propagator::propagate_and_clone(): desired propagation = %.4f\n" RESET, (timestamp - state->_timestamp))
     std::exit(EXIT_FAILURE);
   }
 
@@ -275,7 +275,7 @@ std::vector<ov_core::ImuData> Propagator::select_imu_readings(const std::vector<
   // Ensure we have some measurements in the first place!
   if (imu_data.empty()) {
     if (warn)
-      PRINT_WARNING(YELLOW "Propagator::select_imu_readings(): No IMU measurements. IMU-CAMERA are likely messed up!!!\n" RESET);
+      PRINT_WARNING(YELLOW "Propagator::select_imu_readings(): No IMU measurements. IMU-CAMERA are likely messed up!!!\n" RESET)
     return prop_data;
   }
 
@@ -347,7 +347,7 @@ std::vector<ov_core::ImuData> Propagator::select_imu_readings(const std::vector<
       PRINT_WARNING(
           YELLOW
           "Propagator::select_imu_readings(): No IMU measurements to propagate with (%d of 2). IMU-CAMERA are likely messed up!!!\n" RESET,
-          (int)prop_data.size());
+          (int)prop_data.size())
     return prop_data;
   }
 
@@ -358,7 +358,7 @@ std::vector<ov_core::ImuData> Propagator::select_imu_readings(const std::vector<
   if (prop_data.at(prop_data.size() - 1).timestamp != time1) {
     if (warn)
       PRINT_DEBUG(YELLOW "Propagator::select_imu_readings(): Missing inertial measurements to propagate with (%f sec missing)!\n" RESET,
-                  (time1 - imu_data.at(imu_data.size() - 1).timestamp));
+                  (time1 - imu_data.at(imu_data.size() - 1).timestamp))
     ov_core::ImuData data = interpolate_data(imu_data.at(imu_data.size() - 2), imu_data.at(imu_data.size() - 1), time1);
     prop_data.push_back(data);
     // PRINT_DEBUG("propagation #%d = CASE 3.4 = %.3f => %.3f\n", (int)(imu_data.size() - 2), data.timestamp - prop_data.at(0).timestamp,
@@ -372,7 +372,7 @@ std::vector<ov_core::ImuData> Propagator::select_imu_readings(const std::vector<
     if (std::abs(prop_data.at(i + 1).timestamp - prop_data.at(i).timestamp) < 1e-12) {
       if (warn)
         PRINT_WARNING(YELLOW "Propagator::select_imu_readings(): Zero DT between IMU reading %d and %d, removing it!\n" RESET, (int)i,
-                      (int)(i + 1));
+                      (int)(i + 1))
       prop_data.erase(prop_data.begin() + i);
       i--;
     }
@@ -384,7 +384,7 @@ std::vector<ov_core::ImuData> Propagator::select_imu_readings(const std::vector<
       PRINT_WARNING(
           YELLOW
           "Propagator::select_imu_readings(): No IMU measurements to propagate with (%d of 2). IMU-CAMERA are likely messed up!!!\n" RESET,
-          (int)prop_data.size());
+          (int)prop_data.size())
     return prop_data;
   }
 

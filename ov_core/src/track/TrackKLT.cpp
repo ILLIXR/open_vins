@@ -35,10 +35,10 @@ void TrackKLT::feed_new_camera(const CameraData &message) {
 
   // Error check that we have all the data
   if (message.sensor_ids.empty() || message.sensor_ids.size() != message.images.size() || message.images.size() != message.masks.size()) {
-    PRINT_ERROR(RED "[ERROR]: MESSAGE DATA SIZES DO NOT MATCH OR EMPTY!!!\n" RESET);
-    PRINT_ERROR(RED "[ERROR]:   - message.sensor_ids.size() = %zu\n" RESET, message.sensor_ids.size());
-    PRINT_ERROR(RED "[ERROR]:   - message.images.size() = %zu\n" RESET, message.images.size());
-    PRINT_ERROR(RED "[ERROR]:   - message.masks.size() = %zu\n" RESET, message.masks.size());
+    PRINT_ERROR(RED "[ERROR]: MESSAGE DATA SIZES DO NOT MATCH OR EMPTY!!!\n" RESET)
+    PRINT_ERROR(RED "[ERROR]:   - message.sensor_ids.size() = %zu\n" RESET, message.sensor_ids.size())
+    PRINT_ERROR(RED "[ERROR]:   - message.images.size() = %zu\n" RESET, message.images.size())
+    PRINT_ERROR(RED "[ERROR]:   - message.masks.size() = %zu\n" RESET, message.masks.size())
     std::exit(EXIT_FAILURE);
   }
 
@@ -88,7 +88,7 @@ void TrackKLT::feed_new_camera(const CameraData &message) {
                     }
                   }));
   } else {
-    PRINT_ERROR(RED "[ERROR]: invalid number of images passed %zu, we only support mono or stereo tracking", num_images);
+    PRINT_ERROR(RED "[ERROR]: invalid number of images passed %zu, we only support mono or stereo tracking", num_images)
     std::exit(EXIT_FAILURE);
   }
 }
@@ -147,7 +147,7 @@ void TrackKLT::feed_monocular(const CameraData &message, size_t msg_id) {
     img_mask_last[cam_id] = mask;
     pts_last[cam_id].clear();
     ids_last[cam_id].clear();
-    PRINT_ERROR(RED "[KLT-EXTRACTOR]: Failed to get enough points to do RANSAC, resetting.....\n" RESET);
+    PRINT_ERROR(RED "[KLT-EXTRACTOR]: Failed to get enough points to do RANSAC, resetting.....\n" RESET)
     return;
   }
 
@@ -190,22 +190,19 @@ void TrackKLT::feed_monocular(const CameraData &message, size_t msg_id) {
   rT5 = boost::posix_time::microsec_clock::local_time();
 
   // Timing information
-  PRINT_ALL("[TIME-KLT]: %.4f seconds for pyramid\n", (rT2 - rT1).total_microseconds() * 1e-6);
+  PRINT_ALL("[TIME-KLT]: %.4f seconds for pyramid\n", (rT2 - rT1).total_microseconds() * 1e-6)
   PRINT_ALL("[TIME-KLT]: %.4f seconds for detection (%zu detected)\n", (rT3 - rT2).total_microseconds() * 1e-6,
-            (int)pts_last[cam_id].size() - pts_before_detect);
-  PRINT_ALL("[TIME-KLT]: %.4f seconds for temporal klt\n", (rT4 - rT3).total_microseconds() * 1e-6);
+            (int)pts_last[cam_id].size() - pts_before_detect)
+  PRINT_ALL("[TIME-KLT]: %.4f seconds for temporal klt\n", (rT4 - rT3).total_microseconds() * 1e-6)
   PRINT_ALL("[TIME-KLT]: %.4f seconds for feature DB update (%d features)\n", (rT5 - rT4).total_microseconds() * 1e-6,
-            (int)good_left.size());
-  PRINT_ALL("[TIME-KLT]: %.4f seconds for total\n", (rT5 - rT1).total_microseconds() * 1e-6);
+            (int)good_left.size())
+  PRINT_ALL("[TIME-KLT]: %.4f seconds for total\n", (rT5 - rT1).total_microseconds() * 1e-6)
 }
 
 void TrackKLT::feed_stereo(const CameraData &message, size_t msg_id_left, size_t msg_id_right) {
-
   // Lock this data feed for this camera
   size_t cam_id_left = message.sensor_ids.at(msg_id_left);
   size_t cam_id_right = message.sensor_ids.at(msg_id_right);
-  std::lock_guard<std::mutex> lck1(mtx_feeds.at(cam_id_left));
-  std::lock_guard<std::mutex> lck2(mtx_feeds.at(cam_id_right));
 
   // Get our image objects for this image
   cv::Mat img_left = img_curr.at(cam_id_left);
@@ -294,7 +291,7 @@ void TrackKLT::feed_stereo(const CameraData &message, size_t msg_id_left, size_t
     pts_last[cam_id_right].clear();
     ids_last[cam_id_left].clear();
     ids_last[cam_id_right].clear();
-    PRINT_ERROR(RED "[KLT-EXTRACTOR]: Failed to get enough points to do RANSAC, resetting.....\n" RESET);
+    PRINT_ERROR(RED "[KLT-EXTRACTOR]: Failed to get enough points to do RANSAC, resetting.....\n" RESET)
     return;
   }
 
@@ -382,14 +379,37 @@ void TrackKLT::feed_stereo(const CameraData &message, size_t msg_id_left, size_t
   rT6 = boost::posix_time::microsec_clock::local_time();
 
   //  // Timing information
-  PRINT_ALL("[TIME-KLT]: %.4f seconds for pyramid\n", (rT2 - rT1).total_microseconds() * 1e-6);
-  PRINT_ALL("[TIME-KLT]: %.4f seconds for detection (%d detected)\n", (rT3 - rT2).total_microseconds() * 1e-6,
-            (int)pts_last[cam_id_left].size() - pts_before_detect);
-  PRINT_ALL("[TIME-KLT]: %.4f seconds for temporal klt\n", (rT4 - rT3).total_microseconds() * 1e-6);
-  PRINT_ALL("[TIME-KLT]: %.4f seconds for stereo klt\n", (rT5 - rT4).total_microseconds() * 1e-6);
-  PRINT_ALL("[TIME-KLT]: %.4f seconds for feature DB update (%d features)\n", (rT6 - rT5).total_microseconds() * 1e-6,
-            (int)good_left.size());
-  PRINT_ALL("[TIME-KLT]: %.4f seconds for total\n", (rT6 - rT1).total_microseconds() * 1e-6);
+    // Timing information
+    const auto pyramid_time = (rT2 - rT1).total_microseconds() * 1e-3;
+    const auto detection_time = (rT3 - rT2).total_microseconds() * 1e-3;
+    const auto temporal_klt_time = (rT4 - rT3).total_microseconds() * 1e-3;
+    const auto stereo_klt_time = (rT5 - rT4).total_microseconds() * 1e-3;
+    const auto matching_time = temporal_klt_time + stereo_klt_time;
+    const auto db_time = (rT6 - rT5).total_microseconds() * 1e-3;
+    const auto total = (rT6 - rT1).total_microseconds() * 1e-3;
+
+    total_images++;
+    total_pyramid_time += pyramid_time;
+    total_detection_time += detection_time;
+    total_matching_time += matching_time;
+    total_db_time += db_time;
+    total_time += total;
+
+    PRINT_ALL(CYAN "[TIME-KLT]: %.4f ms for pyramid\n" RESET, pyramid_time)
+    PRINT_ALL(CYAN "[TIME-KLT]: %.4f ms for detection (%d detected)\n" RESET, detection_time,
+            (int)pts_last[cam_id_left].size() - pts_before_detect)
+    PRINT_ALL(CYAN "[TIME-KLT]: %.4f ms for temporal klt\n" RESET, temporal_klt_time)
+    PRINT_ALL(CYAN "[TIME-KLT]: %.4f ms for stereo klt\n" RESET, stereo_klt_time)
+    PRINT_ALL(CYAN "[TIME-KLT]: %.4f ms for feature DB update (%d features)\n" RESET, db_time,
+            (int)good_left.size())
+    PRINT_ALL(CYAN "[TIME-KLT]: %.4f ms for total\n" RESET, total)
+
+    PRINT_ALL(WHITE "[AVG-TIME-KLT]: %.4f ms for pyramid\n" RESET, total_pyramid_time / (double) total_images)
+    PRINT_ALL(WHITE "[AVG-TIME-KLT]: %.4f ms for detection\n" RESET, total_detection_time / (double) total_images)
+    PRINT_ALL(WHITE "[AVG-TIME-KLT]: %.4f ms for matching\n" RESET, total_matching_time / (double) total_images)
+    PRINT_ALL(WHITE "[AVG-TIME-KLT]: %.4f ms for feature DB update\n" RESET, total_db_time / (double) total_images)
+    PRINT_ALL(WHITE "[AVG-TIME-KLT]: %.4f ms for total\n" RESET, total_time / (double) total_images)
+
 }
 
 void TrackKLT::perform_detection_monocular(const std::vector<cv::Mat> &img0pyr, const cv::Mat &mask0, std::vector<cv::KeyPoint> &pts0,

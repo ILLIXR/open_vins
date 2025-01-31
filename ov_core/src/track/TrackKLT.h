@@ -131,10 +131,18 @@ protected:
   void perform_matching(const std::vector<cv::Mat> &img0pyr, const std::vector<cv::Mat> &img1pyr, std::vector<cv::KeyPoint> &pts0,
                         std::vector<cv::KeyPoint> &pts1, size_t id0, size_t id1, std::vector<uchar> &mask_out);
 
-  // Parameters for our FAST grid detector
-  int threshold;
-  int grid_x;
-  int grid_y;
+        // Timing variables
+        unsigned total_images;
+        double total_pyramid_time;
+        double total_detection_time;
+        double total_matching_time;
+        double total_db_time;
+        double total_time;
+
+        // Parameters for our FAST grid detector
+        int threshold;
+        int grid_x;
+        int grid_y;
 
   // Minimum pixel distance to be "far away enough" to be a different extracted feature
   int min_px_dist;

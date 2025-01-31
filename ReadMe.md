@@ -1,3 +1,5 @@
+**Part of [ILLIXR](https://github.com/ILLIXR/ILLIXR), the Illinois Extended Reality Benchmark Suite. For instructions on how to use OpenVINS for ILLIXR, see [ILLIXR_INSTRUCTIONS][10]**
+
 # OpenVINS
 
 [![ROS 1 Workflow](https://github.com/rpng/open_vins/actions/workflows/build_ros1.yml/badge.svg)](https://github.com/rpng/open_vins/actions/workflows/build_ros1.yml)
@@ -183,3 +185,7 @@ The codebase and documentation is licensed under the [GNU General Public License
 You must preserve the copyright and license notices in your derivative work and make available the complete source code with modifications under the same license ([see this](https://choosealicense.com/licenses/gpl-3.0/); this is not legal advice).
 
 
+
+[//]: # (--- Internal ---)
+
+[10]:   ILLIXR_INSTRUCTIONS.md

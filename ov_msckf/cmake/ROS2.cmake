@@ -21,13 +21,24 @@ if (NOT ENABLE_ROS)
 endif ()
 add_definitions(-DROS_AVAILABLE=2)
 
-# Include our header files
-include_directories(
-        src
-        ${EIGEN3_INCLUDE_DIR}
-        ${Boost_INCLUDE_DIRS}
-        ${CERES_INCLUDE_DIRS}
-)
+if (ILLIXR_INTEGRATION)
+    # Include our header files
+    include_directories(
+            src
+            ${ILLIXR_ROOT}
+            ${EIGEN3_INCLUDE_DIR}
+            ${Boost_INCLUDE_DIRS}
+            ${CERES_INCLUDE_DIRS}
+    )
+else()
+    # Include our header files
+    include_directories(
+            src
+            ${EIGEN3_INCLUDE_DIR}
+            ${Boost_INCLUDE_DIRS}
+            ${CERES_INCLUDE_DIRS}
+    )
+endif()
 
 # Set link libraries used by all binaries
 list(APPEND thirdparty_libraries
@@ -93,20 +104,39 @@ ament_target_dependencies(run_subscribe_msckf ${ament_libraries})
 target_link_libraries(run_subscribe_msckf ov_msckf_lib ${thirdparty_libraries})
 install(TARGETS run_subscribe_msckf DESTINATION lib/${PROJECT_NAME})
 
-add_executable(run_simulation src/run_simulation.cpp)
-ament_target_dependencies(run_simulation ${ament_libraries})
-target_link_libraries(run_simulation ov_msckf_lib ${thirdparty_libraries})
-install(TARGETS run_simulation DESTINATION lib/${PROJECT_NAME})
+if (ILLIXR_INTEGRATION)
+    find_package(spdlog REQUIRED)
+    string(TOLOWER "${CMAKE_BUILD_TYPE}" lower_type)
+    if(lower_type MATCHES "debug")
+        set(ILLIXR_BUILD_SUFFIX ".dbg")
+    elseif(lower_type MATCHES "release")
+        set(ILLIXR_BUILD_SUFFIX ".opt")
+    endif()
 
-add_executable(test_sim_meas src/test_sim_meas.cpp)
-ament_target_dependencies(test_sim_meas ${ament_libraries})
-target_link_libraries(test_sim_meas ov_msckf_lib ${thirdparty_libraries})
-install(TARGETS test_sim_meas DESTINATION lib/${PROJECT_NAME})
+    set(PLUGIN_NAME plugin.openvins${ILLIXR_BUILD_SUFFIX})
+    add_library(${PLUGIN_NAME} SHARED src/slam2.cpp)
+    target_include_directories(${PLUGIN_NAME} PUBLIC ${ILLIXR_ROOT})
+    target_link_libraries(${PLUGIN_NAME} ov_msckf_lib ${thirdparty_libraries} spdlog::spdlog)
+    set_property(TARGET ${PLUGIN_NAME} PROPERTY CXX_STANDARD 17)
+    install(TARGETS ov_msckf_lib DESTINATION lib)
+    install(TARGETS ${PLUGIN_NAME} DESTINATION lib)
+else()
+    add_executable(run_illixr_msckf src/run_illixr_msckf.cpp)
+    target_link_libraries(run_illixr_msckf ov_msckf_lib ${thirdparty_libraries})
+    set_property(TARGET run_illixr_msckf PROPERTY CXX_STANDARD 17)
+endif()
 
-add_executable(test_sim_repeat src/test_sim_repeat.cpp)
-ament_target_dependencies(test_sim_repeat ${ament_libraries})
-target_link_libraries(test_sim_repeat ov_msckf_lib ${thirdparty_libraries})
-install(TARGETS test_sim_repeat DESTINATION lib/${PROJECT_NAME})
+if (ENABLE_TESTS)
+    add_executable(test_sim_meas src/test_sim_meas.cpp)
+    ament_target_dependencies(test_sim_meas ${ament_libraries})
+    target_link_libraries(test_sim_meas ov_msckf_lib ${thirdparty_libraries})
+    install(TARGETS test_sim_meas DESTINATION lib/${PROJECT_NAME})
+
+    add_executable(test_sim_repeat src/test_sim_repeat.cpp)
+    ament_target_dependencies(test_sim_repeat ${ament_libraries})
+    target_link_libraries(test_sim_repeat ov_msckf_lib ${thirdparty_libraries})
+    install(TARGETS test_sim_repeat DESTINATION lib/${PROJECT_NAME})
+endif()
 
 # Install launch and config directories
 install(DIRECTORY launch/ DESTINATION share/${PROJECT_NAME}/launch/)

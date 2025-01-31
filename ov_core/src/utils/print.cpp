@@ -18,7 +18,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
+#ifndef ILLIXR_INTEGRATION
 #include "print.h"
 
 using namespace ov_core;
@@ -102,3 +102,4 @@ void Printer::debugPrint(PrintLevel level, const char location[], const char lin
   vprintf(format, args);
   va_end(args);
 }
+#endif

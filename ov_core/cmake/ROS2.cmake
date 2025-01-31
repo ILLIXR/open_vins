@@ -6,18 +6,26 @@ find_package(rclcpp REQUIRED)
 find_package(cv_bridge REQUIRED)
 
 # Describe ROS project
-option(ENABLE_ROS "Enable or disable building with ROS (if it is found)" ON)
 if (NOT ENABLE_ROS)
     message(FATAL_ERROR "Build with ROS1.cmake if you don't have ROS.")
 endif ()
 add_definitions(-DROS_AVAILABLE=2)
 
 # Include our header files
-include_directories(
-        src
-        ${EIGEN3_INCLUDE_DIR}
-        ${Boost_INCLUDE_DIRS}
-)
+if (ILLIXR_INTEGRATION)
+    include_directories(
+            src
+            ${ILLIXR_ROOT}
+            ${EIGEN3_INCLUDE_DIR}
+            ${Boost_INCLUDE_DIRS}
+    )
+else()
+    include_directories(
+            src
+            ${EIGEN3_INCLUDE_DIR}
+            ${Boost_INCLUDE_DIRS}
+    )
+endif()
 
 # Set link libraries used by all binaries
 list(APPEND thirdparty_libraries

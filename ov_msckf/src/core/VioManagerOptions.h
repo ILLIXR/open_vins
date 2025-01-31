@@ -107,7 +107,7 @@ struct VioManagerOptions {
    * @param parser If not null, this parser will be used to load our parameters
    */
   void print_and_load_estimator(const std::shared_ptr<ov_core::YamlParser> &parser = nullptr) {
-    PRINT_DEBUG("ESTIMATOR PARAMETERS:\n");
+    PRINT_DEBUG("ESTIMATOR PARAMETERS:\n")
     state_options.print(parser);
     init_options.print_and_load(parser);
     if (parser != nullptr) {
@@ -120,14 +120,14 @@ struct VioManagerOptions {
       parser->parse_config("record_timing_information", record_timing_information);
       parser->parse_config("record_timing_filepath", record_timing_filepath);
     }
-    PRINT_DEBUG("  - dt_slam_delay: %.1f\n", dt_slam_delay);
-    PRINT_DEBUG("  - zero_velocity_update: %d\n", try_zupt);
-    PRINT_DEBUG("  - zupt_max_velocity: %.2f\n", zupt_max_velocity);
-    PRINT_DEBUG("  - zupt_noise_multiplier: %.2f\n", zupt_noise_multiplier);
-    PRINT_DEBUG("  - zupt_max_disparity: %.4f\n", zupt_max_disparity);
-    PRINT_DEBUG("  - zupt_only_at_beginning?: %d\n", zupt_only_at_beginning);
-    PRINT_DEBUG("  - record timing?: %d\n", (int)record_timing_information);
-    PRINT_DEBUG("  - record timing filepath: %s\n", record_timing_filepath.c_str());
+    PRINT_DEBUG("  - dt_slam_delay: %.1f\n", dt_slam_delay)
+    PRINT_DEBUG("  - zero_velocity_update: %d\n", try_zupt)
+    PRINT_DEBUG("  - zupt_max_velocity: %.2f\n", zupt_max_velocity)
+    PRINT_DEBUG("  - zupt_noise_multiplier: %.2f\n", zupt_noise_multiplier)
+    PRINT_DEBUG("  - zupt_max_disparity: %.4f\n", zupt_max_disparity)
+    PRINT_DEBUG("  - zupt_only_at_beginning?: %d\n", zupt_only_at_beginning)
+    PRINT_DEBUG("  - record timing?: %d\n", (int)record_timing_information)
+    PRINT_DEBUG("  - record timing filepath: %s\n", record_timing_filepath.c_str())
   }
 
   // NOISE / CHI2 ============================
@@ -154,7 +154,7 @@ struct VioManagerOptions {
    * @param parser If not null, this parser will be used to load our parameters
    */
   void print_and_load_noise(const std::shared_ptr<ov_core::YamlParser> &parser = nullptr) {
-    PRINT_DEBUG("NOISE PARAMETERS:\n");
+    PRINT_DEBUG("NOISE PARAMETERS:\n")
     if (parser != nullptr) {
       parser->parse_external("relative_config_imu", "imu0", "gyroscope_noise_density", imu_noises.sigma_w);
       parser->parse_external("relative_config_imu", "imu0", "gyroscope_random_walk", imu_noises.sigma_wb);
@@ -174,13 +174,13 @@ struct VioManagerOptions {
       aruco_options.sigma_pix_sq = std::pow(aruco_options.sigma_pix, 2);
       parser->parse_config("zupt_chi2_multipler", zupt_options.chi2_multipler);
     }
-    PRINT_DEBUG("  Updater MSCKF Feats:\n");
+    PRINT_DEBUG("  Updater MSCKF Feats:\n")
     msckf_options.print();
-    PRINT_DEBUG("  Updater SLAM Feats:\n");
+    PRINT_DEBUG("  Updater SLAM Feats:\n")
     slam_options.print();
-    PRINT_DEBUG("  Updater ARUCO Tags:\n");
+    PRINT_DEBUG("  Updater ARUCO Tags:\n")
     aruco_options.print();
-    PRINT_DEBUG("  Updater ZUPT:\n");
+    PRINT_DEBUG("  Updater ZUPT:\n")
     zupt_options.print();
   }
 
@@ -286,17 +286,17 @@ struct VioManagerOptions {
           parser->parse_config(mask_node, mask_path);
           std::string total_mask_path = parser->get_config_folder() + mask_path;
           if (!boost::filesystem::exists(total_mask_path)) {
-            PRINT_ERROR(RED "VioManager(): invalid mask path:\n" RESET);
-            PRINT_ERROR(RED "\t- mask%d - %s\n" RESET, i, total_mask_path.c_str());
+            PRINT_ERROR(RED "VioManager(): invalid mask path:\n" RESET)
+            PRINT_ERROR(RED "\t- mask%d - %s\n" RESET, i, total_mask_path.c_str())
             std::exit(EXIT_FAILURE);
           }
           cv::Mat mask = cv::imread(total_mask_path, cv::IMREAD_GRAYSCALE);
           masks.insert({i, mask});
           if (mask.cols != camera_intrinsics.at(i)->w() || mask.rows != camera_intrinsics.at(i)->h()) {
-            PRINT_ERROR(RED "VioManager(): mask size does not match camera!\n" RESET);
-            PRINT_ERROR(RED "\t- mask%d - %s\n" RESET, i, total_mask_path.c_str());
-            PRINT_ERROR(RED "\t- mask%d - %d x %d\n" RESET, mask.cols, mask.rows);
-            PRINT_ERROR(RED "\t- cam%d - %d x %d\n" RESET, camera_intrinsics.at(i)->w(), camera_intrinsics.at(i)->h());
+            PRINT_ERROR(RED "VioManager(): mask size does not match camera!\n" RESET)
+            PRINT_ERROR(RED "\t- mask%d - %s\n" RESET, i, total_mask_path.c_str())
+            PRINT_ERROR(RED "\t- mask%d - %d x %d\n" RESET, mask.cols, mask.rows)
+            PRINT_ERROR(RED "\t- cam%d - %d x %d\n" RESET, camera_intrinsics.at(i)->w(), camera_intrinsics.at(i)->h())
             std::exit(EXIT_FAILURE);
           }
         }
@@ -325,7 +325,7 @@ struct VioManagerOptions {
         ss << "gyroscope has bad intrinsic values!" << std::endl;
         ss << "Tw - " << std::endl << Tw << std::endl << std::endl;
         ss << "Dw - " << std::endl << Dw << std::endl << std::endl;
-        PRINT_DEBUG(RED "" RESET, ss.str().c_str());
+        PRINT_DEBUG(RED "" RESET, ss.str().c_str())
         std::exit(EXIT_FAILURE);
       }
       if (std::isnan(Ta.norm()) || std::isnan(Da.norm())) {
@@ -333,7 +333,7 @@ struct VioManagerOptions {
         ss << "accelerometer has bad intrinsic values!" << std::endl;
         ss << "Ta - " << std::endl << Ta << std::endl << std::endl;
         ss << "Da - " << std::endl << Da << std::endl << std::endl;
-        PRINT_DEBUG(RED "" RESET, ss.str().c_str());
+        PRINT_DEBUG(RED "" RESET, ss.str().c_str())
         std::exit(EXIT_FAILURE);
       }
 
@@ -350,20 +350,20 @@ struct VioManagerOptions {
       q_GYROtoIMU = ov_core::rot_2_quat(R_GYROtoIMU);
       q_ACCtoIMU = ov_core::rot_2_quat(R_ACCtoIMU);
     }
-    PRINT_DEBUG("STATE PARAMETERS:\n");
-    PRINT_DEBUG("  - gravity_mag: %.4f\n", gravity_mag);
-    PRINT_DEBUG("  - gravity: %.3f, %.3f, %.3f\n", 0.0, 0.0, gravity_mag);
-    PRINT_DEBUG("  - camera masks?: %d\n", use_mask);
+    PRINT_DEBUG("STATE PARAMETERS:\n")
+    PRINT_DEBUG("  - gravity_mag: %.4f\n", gravity_mag)
+    PRINT_DEBUG("  - gravity: %.3f, %.3f, %.3f\n", 0.0, 0.0, gravity_mag)
+    PRINT_DEBUG("  - camera masks?: %d\n", use_mask)
     if (state_options.num_cameras != (int)camera_intrinsics.size() || state_options.num_cameras != (int)camera_extrinsics.size()) {
-      PRINT_ERROR(RED "[SIM]: camera calib size does not match max cameras...\n" RESET);
+      PRINT_ERROR(RED "[SIM]: camera calib size does not match max cameras...\n" RESET)
       PRINT_ERROR(RED "[SIM]: got %d but expected %d max cameras (camera_intrinsics)\n" RESET, (int)camera_intrinsics.size(),
-                  state_options.num_cameras);
+                  state_options.num_cameras)
       PRINT_ERROR(RED "[SIM]: got %d but expected %d max cameras (camera_extrinsics)\n" RESET, (int)camera_extrinsics.size(),
-                  state_options.num_cameras);
+                  state_options.num_cameras)
       std::exit(EXIT_FAILURE);
     }
-    PRINT_DEBUG("  - calib_camimu_dt: %.4f\n", calib_camimu_dt);
-    PRINT_DEBUG("CAMERA PARAMETERS:\n");
+    PRINT_DEBUG("  - calib_camimu_dt: %.4f\n", calib_camimu_dt)
+    PRINT_DEBUG("CAMERA PARAMETERS:\n")
     for (int n = 0; n < state_options.num_cameras; n++) {
       std::stringstream ss;
       ss << "cam_" << n << "_fisheye:" << (std::dynamic_pointer_cast<ov_core::CamEqui>(camera_intrinsics.at(n)) != nullptr) << std::endl;
@@ -378,9 +378,9 @@ struct VioManagerOptions {
       T_CtoI.block(0, 0, 3, 3) = ov_core::quat_2_Rot(camera_extrinsics.at(n).block(0, 0, 4, 1)).transpose();
       T_CtoI.block(0, 3, 3, 1) = -T_CtoI.block(0, 0, 3, 3) * camera_extrinsics.at(n).block(4, 0, 3, 1);
       ss << "T_C" << n << "toI:" << std::endl << T_CtoI << std::endl << std::endl;
-      PRINT_DEBUG(ss.str().c_str());
+      PRINT_DEBUG(ss.str().c_str())
     }
-    PRINT_DEBUG("IMU PARAMETERS:\n");
+    PRINT_DEBUG("IMU PARAMETERS:\n")
     std::stringstream ss;
     ss << "imu model:" << ((state_options.imu_model == StateOptions::ImuModel::KALIBR) ? "kalibr" : "rpng") << std::endl;
     ss << "Dw (columnwise):" << vec_dw.transpose() << std::endl;
@@ -388,7 +388,7 @@ struct VioManagerOptions {
     ss << "Tg (columnwise):" << vec_tg.transpose() << std::endl;
     ss << "q_GYROtoI: " << q_GYROtoIMU.transpose() << std::endl;
     ss << "q_ACCtoI: " << q_ACCtoIMU.transpose() << std::endl;
-    PRINT_DEBUG(ss.str().c_str());
+    PRINT_DEBUG(ss.str().c_str())
   }
 
   // TRACKERS ===============================
@@ -483,22 +483,22 @@ struct VioManagerOptions {
       parser->parse_config("knn_ratio", knn_ratio);
       parser->parse_config("track_frequency", track_frequency);
     }
-    PRINT_DEBUG("FEATURE TRACKING PARAMETERS:\n");
-    PRINT_DEBUG("  - use_stereo: %d\n", use_stereo);
-    PRINT_DEBUG("  - use_klt: %d\n", use_klt);
-    PRINT_DEBUG("  - use_aruco: %d\n", use_aruco);
-    PRINT_DEBUG("  - downsize aruco: %d\n", downsize_aruco);
-    PRINT_DEBUG("  - downsize cameras: %d\n", downsample_cameras);
-    PRINT_DEBUG("  - num opencv threads: %d\n", num_opencv_threads);
-    PRINT_DEBUG("  - use multi-threading pubs: %d\n", use_multi_threading_pubs);
-    PRINT_DEBUG("  - use multi-threading subs: %d\n", use_multi_threading_subs);
-    PRINT_DEBUG("  - num_pts: %d\n", num_pts);
-    PRINT_DEBUG("  - fast threshold: %d\n", fast_threshold);
-    PRINT_DEBUG("  - grid X by Y: %d by %d\n", grid_x, grid_y);
-    PRINT_DEBUG("  - min px dist: %d\n", min_px_dist);
-    PRINT_DEBUG("  - hist method: %d\n", (int)histogram_method);
-    PRINT_DEBUG("  - knn ratio: %.3f\n", knn_ratio);
-    PRINT_DEBUG("  - track frequency: %.1f\n", track_frequency);
+    PRINT_DEBUG("FEATURE TRACKING PARAMETERS:\n")
+    PRINT_DEBUG("  - use_stereo: %d\n", use_stereo)
+    PRINT_DEBUG("  - use_klt: %d\n", use_klt)
+    PRINT_DEBUG("  - use_aruco: %d\n", use_aruco)
+    PRINT_DEBUG("  - downsize aruco: %d\n", downsize_aruco)
+    PRINT_DEBUG("  - downsize cameras: %d\n", downsample_cameras)
+    PRINT_DEBUG("  - num opencv threads: %d\n", num_opencv_threads)
+    PRINT_DEBUG("  - use multi-threading pubs: %d\n", use_multi_threading_pubs)
+    PRINT_DEBUG("  - use multi-threading subs: %d\n", use_multi_threading_subs)
+    PRINT_DEBUG("  - num_pts: %d\n", num_pts)
+    PRINT_DEBUG("  - fast threshold: %d\n", fast_threshold)
+    PRINT_DEBUG("  - grid X by Y: %d by %d\n", grid_x, grid_y)
+    PRINT_DEBUG("  - min px dist: %d\n", min_px_dist)
+    PRINT_DEBUG("  - hist method: %d\n", (int)histogram_method)
+    PRINT_DEBUG("  - knn ratio: %.3f\n", knn_ratio)
+    PRINT_DEBUG("  - track frequency: %.1f\n", track_frequency)
     featinit_options.print(parser);
   }
 
@@ -555,17 +555,17 @@ struct VioManagerOptions {
       parser->parse_config("sim_min_feature_gen_dist", sim_min_feature_gen_distance);
       parser->parse_config("sim_max_feature_gen_dist", sim_max_feature_gen_distance);
     }
-    PRINT_DEBUG("SIMULATION PARAMETERS:\n");
-    PRINT_WARNING(BOLDRED "  - state init seed: %d \n" RESET, sim_seed_state_init);
-    PRINT_WARNING(BOLDRED "  - perturb seed: %d \n" RESET, sim_seed_preturb);
-    PRINT_WARNING(BOLDRED "  - measurement seed: %d \n" RESET, sim_seed_measurements);
-    PRINT_WARNING(BOLDRED "  - do perturb?: %d\n" RESET, sim_do_perturbation);
-    PRINT_DEBUG("  - traj path: %s\n", sim_traj_path.c_str());
-    PRINT_DEBUG("  - dist thresh: %.2f\n", sim_distance_threshold);
-    PRINT_DEBUG("  - cam feq: %.2f\n", sim_freq_cam);
-    PRINT_DEBUG("  - imu feq: %.2f\n", sim_freq_imu);
-    PRINT_DEBUG("  - min feat dist: %.2f\n", sim_min_feature_gen_distance);
-    PRINT_DEBUG("  - max feat dist: %.2f\n", sim_max_feature_gen_distance);
+    PRINT_DEBUG("SIMULATION PARAMETERS:\n")
+    PRINT_WARNING(BOLDRED "  - state init seed: %d \n" RESET, sim_seed_state_init)
+    PRINT_WARNING(BOLDRED "  - perturb seed: %d \n" RESET, sim_seed_preturb)
+    PRINT_WARNING(BOLDRED "  - measurement seed: %d \n" RESET, sim_seed_measurements)
+    PRINT_WARNING(BOLDRED "  - do perturb?: %d\n" RESET, sim_do_perturbation)
+    PRINT_DEBUG("  - traj path: %s\n", sim_traj_path.c_str())
+    PRINT_DEBUG("  - dist thresh: %.2f\n", sim_distance_threshold)
+    PRINT_DEBUG("  - cam feq: %.2f\n", sim_freq_cam)
+    PRINT_DEBUG("  - imu feq: %.2f\n", sim_freq_imu)
+    PRINT_DEBUG("  - min feat dist: %.2f\n", sim_min_feature_gen_distance)
+    PRINT_DEBUG("  - max feat dist: %.2f\n", sim_max_feature_gen_distance)
   }
 };
 
