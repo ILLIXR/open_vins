@@ -27,11 +27,6 @@
 #include <mutex>
 
 #include "utils/sensor_data.h"
-#ifdef ILLIXR_INTEGRATION
-#include "illixr/data_format.hpp"
-#endif /// ILLIXR_INTEGRATION
-
-
 #include "utils/NoiseManager.h"
 
 namespace ov_msckf {

@@ -97,6 +97,11 @@ struct VioManagerOptions {
   /// If we should record the timing performance to file
   bool record_timing_information = false;
 
+  /// Amount of time we will initialize over (seconds)
+  double init_window_time = 1.0;
+
+  ///  Variance threshold on our acceleration to be classified as moving
+  double init_imu_thresh = 1.0;
   /// The path to the file we will record the timing information into
   std::string record_timing_filepath = "ov_msckf_timing.txt";
 
@@ -126,6 +131,8 @@ struct VioManagerOptions {
     PRINT_DEBUG("  - zupt_noise_multiplier: %.2f\n", zupt_noise_multiplier)
     PRINT_DEBUG("  - zupt_max_disparity: %.4f\n", zupt_max_disparity)
     PRINT_DEBUG("  - zupt_only_at_beginning?: %d\n", zupt_only_at_beginning)
+    PRINT_DEBUG("\t- init_window_time: %.2f\n", init_window_time)
+    PRINT_DEBUG("\t- init_imu_thresh: %.2f\n", init_imu_thresh)
     PRINT_DEBUG("  - record timing?: %d\n", (int)record_timing_information)
     PRINT_DEBUG("  - record timing filepath: %s\n", record_timing_filepath.c_str())
   }

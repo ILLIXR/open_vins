@@ -12,8 +12,11 @@ endif()
 option(ENABLE_ROS "Enable or disable building with ROS (if it is found)" OFF)
 set(ILLIXR_ROOT "" CACHE PATH "Directory of ILLIXR includes")
 option(ENABLE_TESTS "Enable building tests" OFF)
-
-if (ILLIXR_INTEGRATION AND NOT ILLIXR_ROOT)
+option(USE_ZED "Whether to build for the zed camera" OFF)
+if (USE_ZED)
+    add_compile_definitions(HAVE_ZED)
+endif()
+if (NOT ILLIXR_ROOT)
     message(FATAL_ERROR "ILLIXR_ROOT must be specified if ILLIXR_INTEGRATION is enabled.")
 endif()
 
