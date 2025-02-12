@@ -171,7 +171,7 @@ VioManagerOptions create_params()
 	params.use_aruco = false;
 
 	params.state_options.feat_rep_slam = LandmarkRepresentation::from_string("ANCHORED_FULL_INVERSE_DEPTH");
-  params.state_options.feat_rep_aruco = LandmarkRepresentation::from_string("ANCHORED_FULL_INVERSE_DEPTH");
+    params.state_options.feat_rep_aruco = LandmarkRepresentation::from_string("ANCHORED_FULL_INVERSE_DEPTH");
 
 	return params;
 }
@@ -183,14 +183,14 @@ duration from_seconds(double seconds) {
 class slam2 : public plugin {
 public:
 	/* Provide handles to slam2 */
-	slam2(std::string name_, phonebook* pb_)
-		: plugin{std::move(name_), pb_}
-		, sb{pb->lookup_impl<switchboard>()}
-		, _m_rtc{pb->lookup_impl<RelativeClock>()}
-		, _m_pose{sb->get_writer<pose_type>("slow_pose")}
-		, _m_imu_integrator_input{sb->get_writer<imu_integrator_input>("imu_integrator_input")}
-		, _m_cam{sb->get_buffered_reader<cam_type>("cam")}
-		, open_vins_estimator{manager_params}
+	slam2(const std::string& name_, phonebook* pb_)
+		: plugin{name_, pb_}
+		, switchboard_{phonebook_->lookup_impl<switchboard>()}
+		, clock_{phonebook_->lookup_impl<relative_clock>()}
+		, pose_writer_{switchboard_->get_writer<pose_type>("slow_pose")}
+		, imu_integrator_input_{switchboard_->get_writer<imu_integrator_input>("imu_integrator_input")}
+		, cam_{switchboard_->get_buffered_reader<cam_type>("cam")}
+		, open_vins_estimator_{manager_params_}
 	{
 
         // Disabling OpenCV threading is faster on x86 desktop but slower on
@@ -206,7 +206,7 @@ public:
 
 	void start() override {
 		plugin::start();
-		sb->schedule<imu_type>(id, "imu", [&](const switchboard::ptr<const imu_type>& datum, std::size_t iteration_no) {
+		switchboard_->schedule<imu_type>(id_, "imu", [&](const switchboard::ptr<const imu_type>& datum, std::size_t iteration_no) {
 			this->feed_imu_cam(datum, iteration_no);
 		});
 	}
@@ -219,17 +219,17 @@ public:
 		}
 
 		// Feed the IMU measurement. There should always be IMU data in each call to feed_imu_cam
-		open_vins_estimator.feed_measurement_imu(duration2double(datum->time.time_since_epoch()), datum->angular_v, datum->linear_a);
+		open_vins_estimator_.feed_measurement_imu(duration_to_double(datum->time.time_since_epoch()), datum->angular_v, datum->linear_a);
 
 		switchboard::ptr<const cam_type> cam;
 		// Buffered Async:
-		cam = _m_cam.size() == 0 ? nullptr : _m_cam.dequeue();
+		cam = cam_.size() == 0 ? nullptr : cam_.dequeue();
 		// If there is not cam data this func call, break early
 		if (!cam) {
 			return;
 		}
-		if (!cam_buffer) {
-			cam_buffer = cam;
+		if (!cam_buffer_) {
+			cam_buffer_ = cam;
 			return;
 		}
 
@@ -243,15 +243,15 @@ public:
 #warning "No OpenCV metrics available. Please recompile OpenCV from git clone --branch 3.4.6-instrumented https://github.com/ILLIXR/opencv/. (see install_deps.sh)"
 #endif
 
-		cv::Mat img0{cam_buffer->img0};
-		cv::Mat img1{cam_buffer->img1};
-		open_vins_estimator.feed_measurement_stereo(duration2double(cam_buffer->time.time_since_epoch()), img0, img1, 0, 1);
+		cv::Mat img0{cam_buffer_->img0};
+		cv::Mat img1{cam_buffer_->img1};
+		open_vins_estimator_.feed_measurement_stereo(duration_to_double(cam_buffer_->time.time_since_epoch()), img0, img1, 0, 1);
 
 		// Get the pose returned from SLAM
-		state = open_vins_estimator.get_state();
-		Eigen::Vector4d quat = state->_imu->quat();
-		Eigen::Vector3d vel = state->_imu->vel();
-		Eigen::Vector3d pose = state->_imu->pos();
+		state_ = open_vins_estimator_.get_state();
+		Eigen::Vector4d quat = state_->_imu->quat();
+		Eigen::Vector3d vel = state_->_imu->vel();
+		Eigen::Vector3d pose = state_->_imu->pos();
 
 		Eigen::Vector3f swapped_pos = Eigen::Vector3f{float(pose(0)), float(pose(1)), float(pose(2))};
 		Eigen::Quaternionf swapped_rot = Eigen::Quaternionf{float(quat(3)), float(quat(0)), float(quat(1)), float(quat(2))};
@@ -265,16 +265,16 @@ public:
         assert(isfinite(swapped_pos[1]));
         assert(isfinite(swapped_pos[2]));
 
-		if (open_vins_estimator.initialized()) {
-			_m_pose.put(_m_pose.allocate(
-				cam_buffer->time,
+		if (open_vins_estimator_.initialized()) {
+			pose_writer_.put(pose_writer_.allocate(
+				cam_buffer_->time,
 				swapped_pos,
 				swapped_rot
 			));
 
-			_m_imu_integrator_input.put(_m_imu_integrator_input.allocate(
-				cam_buffer->time,
-				from_seconds(state->_calib_dt_CAMtoIMU->value()(0)),
+			imu_integrator_input_.put(imu_integrator_input_.allocate(
+				cam_buffer_->time,
+				from_seconds(state_->_calib_dt_CAMtoIMU->value()(0)),
 				imu_params{
 					.gyro_noise = 0.00016968,
 					.acc_noise = 0.002,
@@ -284,30 +284,30 @@ public:
 					.imu_integration_sigma = 1.0,
 					.nominal_rate = 200.0,
 				},
-				state->_imu->bias_a(),
-				state->_imu->bias_g(),
+				state_->_imu->bias_a(),
+				state_->_imu->bias_g(),
 				pose,
 				vel,
 				swapped_rot2
 			));
 		}
-		cam_buffer = cam;
+		cam_buffer_ = cam;
 	}
 
 	~slam2() override = default;
 
 private:
-	const std::shared_ptr<switchboard> sb;
-	std::shared_ptr<RelativeClock> _m_rtc; 
-	switchboard::writer<pose_type> _m_pose;
-	switchboard::writer<imu_integrator_input> _m_imu_integrator_input;
-	State *state{};
+	const std::shared_ptr<switchboard> switchboard_;
+	std::shared_ptr<relative_clock> clock_;
+	switchboard::writer<pose_type> pose_writer_;
+	switchboard::writer<imu_integrator_input> imu_integrator_input_;
+	State *state_{};
 
-	switchboard::ptr<const cam_type> cam_buffer;
-	switchboard::buffered_reader<cam_type> _m_cam;
+	switchboard::ptr<const cam_type> cam_buffer_;
+	switchboard::buffered_reader<cam_type> cam_;
 
-	VioManagerOptions manager_params = create_params();
-	VioManager open_vins_estimator;
+	VioManagerOptions manager_params_ = create_params();
+	VioManager open_vins_estimator_;
 };
 
 PLUGIN_MAIN(slam2)
