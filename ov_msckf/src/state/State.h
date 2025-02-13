@@ -1,9 +1,9 @@
 /*
  * OpenVINS: An Open Platform for Visual-Inertial Research
- * Copyright (C) 2019 Patrick Geneva
- * Copyright (C) 2019 Kevin Eckenhoff
- * Copyright (C) 2019 Guoquan Huang
- * Copyright (C) 2019 OpenVINS Contributors
+ * Copyright (C) 2018-2023 Patrick Geneva
+ * Copyright (C) 2018-2023 Guoquan Huang
+ * Copyright (C) 2018-2023 OpenVINS Contributors
+ * Copyright (C) 2018-2019 Kevin Eckenhoff
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,116 +18,180 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
 #ifndef OV_MSCKF_STATE_H
 #define OV_MSCKF_STATE_H
 
-
-#include <vector>
+#include <map>
+#include <memory>
+#include <mutex>
 #include <unordered_map>
+#include <vector>
 
-#include "types/Type.h"
-#include "types/IMU.h"
-#include "types/Vec.h"
-#include "types/PoseJPL.h"
-#include "types/Landmark.h"
 #include "StateOptions.h"
-
-using namespace ov_core;
-using namespace ov_type;
-
+#include "cam/CamBase.h"
+#include "types/IMU.h"
+#include "types/Landmark.h"
+#include "types/PoseJPL.h"
+#include "types/Type.h"
+#include "types/Vec.h"
 
 namespace ov_msckf {
 
-    /**
-     * @brief State of our filter
-     *
-     * This state has all the current estimates for the filter.
-     * This system is modeled after the MSCKF filter, thus we have a sliding window of clones.
-     * We additionally have more parameters for online estimation of calibration and SLAM features.
-     * We also have the covariance of the system, which should be managed using the StateHelper class.
-     */
-    class State {
+/**
+ * @brief State of our filter
+ *
+ * This state has all the current estimates for the filter.
+ * This system is modeled after the MSCKF filter, thus we have a sliding window of clones.
+ * We additionally have more parameters for online estimation of calibration and SLAM features.
+ * We also have the covariance of the system, which should be managed using the StateHelper class.
+ */
+class State {
 
-    public:
+public:
+  /**
+   * @brief Default Constructor (will initialize variables to defaults)
+   * @param options_ Options structure containing filter options
+   */
+  State(StateOptions &options_);
 
-        /**
-         * @brief Default Constructor (will initialize variables to defaults)
-         * @param options_ Options structure containing filter options
-         */
-        State(StateOptions &options_);
+  ~State() {}
 
-        ~State() {}
+  /**
+   * @brief Will return the timestep that we will marginalize next.
+   * As of right now, since we are using a sliding window, this is the oldest clone.
+   * But if you wanted to do a keyframe system, you could selectively marginalize clones.
+   * @return timestep of clone we will marginalize
+   */
+  double margtimestep() {
+    std::lock_guard<std::mutex> lock(_mutex_state);
+    double time = INFINITY;
+    for (const auto &clone_imu : _clones_IMU) {
+      if (clone_imu.first < time) {
+        time = clone_imu.first;
+      }
+    }
+    return time;
+  }
 
+  /**
+   * @brief Calculates the current max size of the covariance
+   * @return Size of the current covariance matrix
+   */
+  int max_covariance_size() { return (int)_Cov.rows(); }
 
-        /**
-         * @brief Will return the timestep that we will marginalize next.
-         * As of right now, since we are using a sliding window, this is the oldest clone.
-         * But if you wanted to do a keyframe system, you could selectively marginalize clones.
-         * @return timestep of clone we will marginalize
-         */
-        double margtimestep() {
-            double time = INFINITY;
-            for (std::pair<const double, PoseJPL*> &clone_imu : _clones_IMU) {
-                if (clone_imu.first < time) {
-                    time = clone_imu.first;
-                }
-            }
-            return time;
-        }
+  /**
+   * @brief Gyroscope and accelerometer intrinsic matrix (scale imperfection and axis misalignment)
+   *
+   * If kalibr model, lower triangular of the matrix is used
+   * If rpng model, upper triangular of the matrix is used
+   *
+   * @return 3x3 matrix of current imu gyroscope / accelerometer intrinsics
+   */
+  static Eigen::Matrix3d Dm(StateOptions::ImuModel imu_model, const Eigen::MatrixXd &vec) {
+    assert(vec.rows() == 6);
+    assert(vec.cols() == 1);
+    Eigen::Matrix3d D_matrix = Eigen::Matrix3d::Identity();
+    if (imu_model == StateOptions::ImuModel::KALIBR) {
+      D_matrix << vec(0), 0, 0, vec(1), vec(3), 0, vec(2), vec(4), vec(5);
+    } else {
+      D_matrix << vec(0), vec(1), vec(3), 0, vec(2), vec(4), 0, 0, vec(5);
+    }
+    return D_matrix;
+  }
 
-        /**
-         * @brief Calculates the current max size of the covariance
-         * @return Size of the current covariance matrix
-         */
-        int max_covariance_size() {
-            return (int)_Cov.rows();
-        }
+  /**
+   * @brief Gyroscope gravity sensitivity
+   *
+   * For both kalibr and rpng models, this a 3x3 that is column-wise filled.
+   *
+   * @return 3x3 matrix of current gravity sensitivity
+   */
+  static Eigen::Matrix3d Tg(const Eigen::MatrixXd &vec) {
+    assert(vec.rows() == 9);
+    assert(vec.cols() == 1);
+    Eigen::Matrix3d Tg = Eigen::Matrix3d::Zero();
+    Tg << vec(0), vec(3), vec(6), vec(1), vec(4), vec(7), vec(2), vec(5), vec(8);
+    return Tg;
+  }
 
+  /**
+   * @brief Calculates the error state size for imu intrinsics.
+   *
+   * This is used to construct our state transition which depends on if we are estimating calibration.
+   * 15 if doing intrinsics, another +9 if doing grav sensitivity
+   *
+   * @return size of error state
+   */
+  int imu_intrinsic_size() const {
+    int sz = 0;
+    if (_options.do_calib_imu_intrinsics) {
+      sz += 15;
+      if (_options.do_calib_imu_g_sensitivity) {
+        sz += 9;
+      }
+    }
+    return sz;
+  }
 
-        /// Current timestamp (should be the last update time!)
-        double _timestamp;
+  /// Mutex for locking access to the state
+  std::mutex _mutex_state;
 
-        /// Struct containing filter options
-        StateOptions _options;
+  /// Current timestamp (should be the last update time in camera clock frame!)
+  double _timestamp = -1;
 
-        /// Pointer to the "active" IMU state (q_GtoI, p_IinG, v_IinG, bg, ba)
-        IMU *_imu;
+  /// Struct containing filter options
+  StateOptions _options;
 
-        /// Map between imaging times and clone poses (q_GtoIi, p_IiinG)
-        std::map<double, PoseJPL*> _clones_IMU;
+  /// Pointer to the "active" IMU state (q_GtoI, p_IinG, v_IinG, bg, ba)
+  std::shared_ptr<ov_type::IMU> _imu;
 
-        /// Our current set of SLAM features (3d positions)
-        std::unordered_map<size_t, Landmark*> _features_SLAM;
+  /// Map between imaging times and clone poses (q_GtoIi, p_IiinG)
+  std::map<double, std::shared_ptr<ov_type::PoseJPL>> _clones_IMU;
 
-        /// Time offset base IMU to camera (t_imu = t_cam + t_off)
-        Vec *_calib_dt_CAMtoIMU;
+  /// Our current set of SLAM features (3d positions)
+  std::unordered_map<size_t, std::shared_ptr<ov_type::Landmark>> _features_SLAM;
 
-        /// Calibration poses for each camera (R_ItoC, p_IinC)
-        std::unordered_map<size_t, PoseJPL*> _calib_IMUtoCAM;
+  /// Time offset base IMU to camera (t_imu = t_cam + t_off)
+  std::shared_ptr<ov_type::Vec> _calib_dt_CAMtoIMU;
 
-        /// Camera intrinsics
-        std::unordered_map<size_t, Vec*> _cam_intrinsics;
+  /// Calibration poses for each camera (R_ItoC, p_IinC)
+  std::unordered_map<size_t, std::shared_ptr<ov_type::PoseJPL>> _calib_IMUtoCAM;
 
-        /// What distortion model we are using (false=radtan, true=fisheye)
-        std::unordered_map<size_t, bool> _cam_intrinsics_model;
+  /// Camera intrinsics
+  std::unordered_map<size_t, std::shared_ptr<ov_type::Vec>> _cam_intrinsics;
 
+  /// Camera intrinsics camera objects
+  std::unordered_map<size_t, std::shared_ptr<ov_core::CamBase>> _cam_intrinsics_cameras;
 
-    private:
+  /// Gyroscope IMU intrinsics (scale imperfection and axis misalignment)
+  std::shared_ptr<ov_type::Vec> _calib_imu_dw;
 
-        // Define that the state helper is a friend class of this class
-        // This will allow it to access the below functions which should normally not be called
-        // This prevents a developer from thinking that the "insert clone" will actually correctly add it to the covariance
-        friend class StateHelper;
+  /// Accelerometer IMU intrinsics (scale imperfection and axis misalignment)
+  std::shared_ptr<ov_type::Vec> _calib_imu_da;
 
-        /// Covariance of all active variables
-        Eigen::MatrixXd _Cov;
+  /// Gyroscope gravity sensitivity
+  std::shared_ptr<ov_type::Vec> _calib_imu_tg;
 
-        /// Vector of variables
-        std::vector<Type*> _variables;
+  /// Rotation from gyroscope frame to the "IMU" accelerometer frame (kalibr model)
+  std::shared_ptr<ov_type::JPLQuat> _calib_imu_GYROtoIMU;
 
+  /// Rotation from accelerometer to the "IMU" gyroscope frame frame (rpng model)
+  std::shared_ptr<ov_type::JPLQuat> _calib_imu_ACCtoIMU;
 
-    };
+private:
+  // Define that the state helper is a friend class of this class
+  // This will allow it to access the below functions which should normally not be called
+  // This prevents a developer from thinking that the "insert clone" will actually correctly add it to the covariance
+  friend class StateHelper;
 
-}
+  /// Covariance of all active variables
+  Eigen::MatrixXd _Cov;
 
-#endif //OV_MSCKF_STATE_H
+  /// Vector of variables
+  std::vector<std::shared_ptr<ov_type::Type>> _variables;
+};
+
+} // namespace ov_msckf
+
+#endif // OV_MSCKF_STATE_H

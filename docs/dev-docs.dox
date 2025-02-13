@@ -4,6 +4,24 @@
 @page dev-docs Documentation Guide
 
 
+@section developers-pdfmanual Building the Latex PDF Reference Manual
+
+1. You will need to install doxygen and texlive with all packages
+    - `sudo apt-get update`
+    - `sudo apt-get install doxygen texlive-full`
+    - You will likely need new version of [doxygen](https://stackoverflow.com/a/50986638/7718197) 1.9.4 to fix ghostscript errors
+2. Go into the project folder and generate latex files
+    - `cd open_vins/`
+    - `doxygen`
+    - This should run, and will stop if there are any latex errors
+    - On my Ubuntu 20.04 this installs version "2019.20200218"
+3. Generate a PDF from the latex files
+    - `cd doxgen_generated/latex/`
+    - `make`
+    - File should be called `refman.pdf`
+
+
+
 @section developers-addpage Adding a Website Page
 
 1. Add a `doc/pagename.dox` file, copy up-to-date license header.
@@ -16,7 +34,6 @@
 
 
 @section latex Math / Latex Equations
-
 
 - More details on how to format your documentation can be found here:
     - http://www.doxygen.nl/manual/formulas.html
@@ -36,22 +53,23 @@
 2. You will need to install python3.6
     - `sudo add-apt-repository ppa:deadsnakes/ppa`
     - `sudo apt-get update`
-    - `sudo apt-get install python3.6`
-    - `curl https://bootstrap.pypa.io/get-pip.py | sudo python3.6`
+    - `sudo apt-get install python3.6 python3.6-distutils`
+    - `curl https://bootstrap.pypa.io/pip/3.6/get-pip.py | sudo python3.6`
     - `sudo -H pip3.6 install jinja2 Pygments`
     - `sudo apt install texlive-base texlive-latex-extra texlive-fonts-extra texlive-fonts-recommended`
 3. To use the bibtex citing you need to have
-    - bibtex executable in search path
-    - perl executable in search path
+    - `bibtex` and `perl` executable in search path
+    - These should be installed through the texlive installation
     - http://www.doxygen.nl/manual/commands.html#cmdcite
 4. Go into the documentation folder and build
     - `cd m.css/documentation/`
     - `python3.6 doxygen.py <path_to_Doxyfile-mcss>`
+    - `python3.6 doxygen.py ~/catkin_ws/src/open_vins/Doxyfile-mcss`
 5. If you run into errors, ensure your python path is set to use the 3.6 libraries
     - ` export PYTHONPATH=/usr/local/lib/python3.6/dist-packages/`
 6. You might need to comment out the `enable_async=True` flag in the doxygen.py file
 7. This should then build the documentation website
-8. Open the html page `/open_vins/doxgen_generated/html/index.html` to view documentation
+8. Open the html page `~/catkin_ws/src/open_vins/doxgen_generated/html/index.html` to view documentation
 
 
 @section developers-theme Custom m.css Theme
@@ -76,7 +94,6 @@
 - Create your figure in IPE then save it to disk (i.e. should have a `file.ipe`)
 - Use the command line utility `iperender`  to convert into a svg
 - `iperender -svg -transparent file.ipe file.svg`
-
 
 
 */

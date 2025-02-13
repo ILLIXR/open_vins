@@ -8,11 +8,13 @@
 
 #include "core/VioManager.h"
 #include "state/State.h"
+#include "utils/quat_ops.h"
 
 #include "illixr/plugin.hpp"
 #include "illixr/switchboard.hpp"
-#include "illixr/data_format.hpp"
-#include "illixr/opencv_data_types.hpp"
+#include "illixr/data_format/opencv_data_types.hpp"
+#include "illixr/data_format/pose.hpp"
+#include "illixr/data_format/imu.hpp"
 #include "illixr/phonebook.hpp"
 #include "illixr/relative_clock.hpp"
 
@@ -21,7 +23,7 @@ using namespace ov_msckf;
 
 // Comment in if using ZED instead of offline_imu_cam
 // TODO: Pull from config YAML file
-// #define ZED
+// #define HAVE_ZED
 
 VioManagerOptions create_params()
 {
@@ -29,7 +31,7 @@ VioManagerOptions create_params()
 
 	// Camera #0
 	Eigen::Matrix<double, 8, 1> intrinsics_0;
-#ifdef ZED
+#ifdef HAVE_ZED
   // ZED calibration tool; fx, fy, cx, cy, k1, k2, p1, p2
   // https://docs.opencv.org/2.4/doc/tutorials/calib3d/camera_calibration/camera_calibration.html
   intrinsics_0 << 349.686, 349.686, 332.778, 192.423, -0.175708, 0.0284421, 0, 0;
@@ -37,8 +39,10 @@ VioManagerOptions create_params()
   // EuRoC
 	intrinsics_0 << 458.654, 457.296, 367.215, 248.375, -0.28340811, 0.07395907, 0.00019359, 1.76187114e-05;
 #endif
+    std::shared_ptr<ov_core::CamRadtan> camera0(new ov_core::CamRadtan(1280, 720));
+    camera0->set_value(intrinsics_0);
 
-#ifdef ZED
+#ifdef HAVE_ZED
   // Camera extrinsics from https://github.com/rpng/open_vins/issues/52#issuecomment-619480497
   std::vector<double> matrix_TCtoI_0 = {-0.01080233, 0.00183858, 0.99993996, 0.01220425,
             -0.99993288, -0.00420947, -0.01079452, 0.0146056,
@@ -59,30 +63,25 @@ VioManagerOptions create_params()
 
 	// Load these into our state
 	Eigen::Matrix<double, 7, 1> extrinsics_0;
-	extrinsics_0.block(0, 0, 4, 1) = rot_2_quat(T_CtoI_0.block(0, 0, 3, 3).transpose());
+	extrinsics_0.block(0, 0, 4, 1) = ov_core::rot_2_quat(T_CtoI_0.block(0, 0, 3, 3).transpose());
 	extrinsics_0.block(4, 0, 3, 1) = -T_CtoI_0.block(0, 0, 3, 3).transpose() * T_CtoI_0.block(0, 3, 3, 1);
 
-	params.camera_fisheye.insert({0, false});
-	params.camera_intrinsics.insert({0, intrinsics_0});
+	params.camera_intrinsics.insert({0, camera0});
 	params.camera_extrinsics.insert({0, extrinsics_0});
-
-#ifdef ZED
-  params.camera_wh.insert({0, {672, 376}});
-#else
-	params.camera_wh.insert({0, {752, 480}});
-#endif
 
 	// Camera #1
 	Eigen::Matrix<double, 8, 1> intrinsics_1;
-#ifdef ZED
+#ifdef HAVE_ZED
   // ZED calibration tool; fx, fy, cx, cy, k1, k2, p1, p2
   intrinsics_1 << 350.01, 350.01, 343.729, 185.405, -0.174559, 0.0277521, 0, 0;
 #else
   // EuRoC
 	intrinsics_1 << 457.587, 456.134, 379.999, 255.238, -0.28368365, 0.07451284, -0.00010473, -3.55590700e-05;
 #endif
+    std::shared_ptr<ov_core::CamRadtan> camera1(new ov_core::CamRadtan(1280, 720));
+    camera1->set_value(intrinsics_1);
 
-#ifdef ZED
+#ifdef HAVE_ZED
   // Camera extrinsics from https://github.com/rpng/open_vins/issues/52#issuecomment-619480497
   std::vector<double> matrix_TCtoI_1 = {-0.01043535, -0.00191061, 0.99994372, 0.01190459,
             -0.99993668, -0.00419281, -0.01044329, -0.04732387,
@@ -103,23 +102,16 @@ VioManagerOptions create_params()
 
 	// Load these into our state
 	Eigen::Matrix<double, 7, 1> extrinsics_1;
-	extrinsics_1.block(0, 0, 4, 1) = rot_2_quat(T_CtoI_1.block(0, 0, 3, 3).transpose());
+	extrinsics_1.block(0, 0, 4, 1) = ov_core::rot_2_quat(T_CtoI_1.block(0, 0, 3, 3).transpose());
 	extrinsics_1.block(4, 0, 3, 1) = -T_CtoI_1.block(0, 0, 3, 3).transpose() * T_CtoI_1.block(0, 3, 3, 1);
 
-	params.camera_fisheye.insert({1, false});
-	params.camera_intrinsics.insert({1, intrinsics_1});
+	params.camera_intrinsics.insert({1, camera1});
 	params.camera_extrinsics.insert({1, extrinsics_1});
-
-#ifdef ZED
-  params.camera_wh.insert({1, {672, 376}});
-#else
-	params.camera_wh.insert({1, {752, 480}});
-#endif
 
 	// params.state_options.max_slam_features = 0;
 	params.state_options.num_cameras = 2;
 	params.init_window_time = 0.75;
-#ifdef ZED
+#ifdef HAVE_ZED
   // Hand tuned
   params.init_imu_thresh = 0.5;
 #else
@@ -129,7 +121,7 @@ VioManagerOptions create_params()
 	params.fast_threshold = 15;
 	params.grid_x = 5;
 	params.grid_y = 3;
-#ifdef ZED
+#ifdef HAVE_ZED
   // Hand tuned
   params.num_pts = 200;
 #else
@@ -138,9 +130,8 @@ VioManagerOptions create_params()
 	params.msckf_options.chi2_multipler = 1;
 	params.knn_ratio = .7;
 
-	params.state_options.imu_avg = true;
 	params.state_options.do_fej = true;
-	params.state_options.use_rk4_integration = true;
+	params.state_options.integration_method = ov_msckf::StateOptions::IntegrationMethod::RK4;
 	params.use_stereo = true;
 	params.state_options.do_calib_camera_pose = true;
 	params.state_options.do_calib_camera_intrinsics = true;
@@ -151,7 +142,7 @@ VioManagerOptions create_params()
 	params.state_options.max_slam_in_update = 25;
 	params.state_options.max_msckf_in_update = 999;
 
-#ifdef ZED
+#ifdef HAVE_ZED
   // Pixel noise; ZED works with defaults values but these may better account for rolling shutter
   params.msckf_options.chi2_multipler = 2;
   params.msckf_options.sigma_pix = 5;
@@ -166,12 +157,17 @@ VioManagerOptions create_params()
 #else
 	params.slam_options.chi2_multipler = 1;
 	params.slam_options.sigma_pix = 1;
+
+	params.imu_noises.sigma_a = 0.002;  // Accelerometer noise
+	params.imu_noises.sigma_ab = 0.003; // Accelerometer random walk
+	params.imu_noises.sigma_w = 0.00016968;  // Gyroscope noise
+	params.imu_noises.sigma_wb = 1.9393e-05; // Gyroscope random walk
 #endif
 
 	params.use_aruco = false;
 
-	params.state_options.feat_rep_slam = LandmarkRepresentation::from_string("ANCHORED_FULL_INVERSE_DEPTH");
-    params.state_options.feat_rep_aruco = LandmarkRepresentation::from_string("ANCHORED_FULL_INVERSE_DEPTH");
+	params.state_options.feat_rep_slam = ov_type::LandmarkRepresentation::from_string("ANCHORED_FULL_INVERSE_DEPTH");
+    params.state_options.feat_rep_aruco = ov_type::LandmarkRepresentation::from_string("ANCHORED_FULL_INVERSE_DEPTH");
 
 	return params;
 }
@@ -183,13 +179,13 @@ duration from_seconds(double seconds) {
 class slam2 : public plugin {
 public:
 	/* Provide handles to slam2 */
-	slam2(const std::string& name_, phonebook* pb_)
+    [[maybe_unused]] slam2(const std::string& name_, phonebook* pb_)
 		: plugin{name_, pb_}
 		, switchboard_{phonebook_->lookup_impl<switchboard>()}
 		, clock_{phonebook_->lookup_impl<relative_clock>()}
-		, pose_writer_{switchboard_->get_writer<pose_type>("slow_pose")}
-		, imu_integrator_input_{switchboard_->get_writer<imu_integrator_input>("imu_integrator_input")}
-		, cam_{switchboard_->get_buffered_reader<cam_type>("cam")}
+		, pose_writer_{switchboard_->get_writer<ILLIXR::data_format::pose_type>("slow_pose")}
+		, imu_integrator_input_{switchboard_->get_writer<ILLIXR::data_format::imu_integrator_input>("imu_integrator_input")}
+		, cam_{switchboard_->get_buffered_reader<ILLIXR::data_format::binocular_cam_type>("cam")}
 		, open_vins_estimator_{manager_params_}
 	{
 
@@ -197,55 +193,41 @@ public:
         // jetson. Keeping this here for manual disabling.
         // cv::setNumThreads(0);
 
-#ifdef CV_HAS_METRICS
-		cv::metrics::setAccount(new std::string{"-1"});
-#endif
-
 	}
 
 
 	void start() override {
 		plugin::start();
-		switchboard_->schedule<imu_type>(id_, "imu", [&](const switchboard::ptr<const imu_type>& datum, std::size_t iteration_no) {
+		switchboard_->schedule<ILLIXR::data_format::imu_type>(id_, "imu", [&](const switchboard::ptr<const ILLIXR::data_format::imu_type>& datum, std::size_t iteration_no) {
 			this->feed_imu_cam(datum, iteration_no);
 		});
 	}
 
 
-	void feed_imu_cam(const switchboard::ptr<const imu_type>& datum, [[maybe_unused]]std::size_t iteration_no) {
+	void feed_imu_cam(const switchboard::ptr<const ILLIXR::data_format::imu_type>& datum, [[maybe_unused]]std::size_t iteration_no) {
 		// Ensures that slam doesnt start before valid IMU readings come in
 		if (datum == nullptr) {
 			return;
 		}
 
 		// Feed the IMU measurement. There should always be IMU data in each call to feed_imu_cam
-		open_vins_estimator_.feed_measurement_imu(duration_to_double(datum->time.time_since_epoch()), datum->angular_v, datum->linear_a);
+		open_vins_estimator_.feed_measurement_imu({duration_to_double(datum->time.time_since_epoch()), datum->angular_v, datum->linear_a});
 
-		switchboard::ptr<const cam_type> cam;
-		// Buffered Async:
-		cam = cam_.size() == 0 ? nullptr : cam_.dequeue();
-		// If there is not cam data this func call, break early
-		if (!cam) {
-			return;
-		}
-		if (!cam_buffer_) {
-			cam_buffer_ = cam;
-			return;
-		}
-
-
-#ifdef CV_HAS_METRICS
-		cv::metrics::setAccount(new std::string{std::to_string(iteration_no)});
-		if (iteration_no % 20 == 0) {
-			cv::metrics::dump();
-		}
-#else
-#warning "No OpenCV metrics available. Please recompile OpenCV from git clone --branch 3.4.6-instrumented https://github.com/ILLIXR/opencv/. (see install_deps.sh)"
-#endif
-
-		cv::Mat img0{cam_buffer_->img0};
-		cv::Mat img1{cam_buffer_->img1};
-		open_vins_estimator_.feed_measurement_stereo(duration_to_double(cam_buffer_->time.time_since_epoch()), img0, img1, 0, 1);
+		switchboard::ptr<const ILLIXR::data_format::binocular_cam_type> cam;
+        // Camera data can only go downstream when there's at least one IMU sample whose timestamp is larger than the camera data's.
+        cam = (cam_buffer_ == nullptr && cam_.size() > 0) ? cam_.dequeue() : nullptr;
+        // If there is no cam data this func call, break early
+        if (!cam_buffer_ && !cam) {
+            return;
+        } else if (!cam_buffer_ && cam) {
+            cam_buffer_ = cam;
+        }
+        if (cam_buffer_->time >= datum->time) {
+            return;
+        }
+		cv::Mat img0{cam_buffer_->at(ILLIXR::data_format::image::LEFT_EYE)};
+		cv::Mat img1{cam_buffer_->at(ILLIXR::data_format::image::RIGHT_EYE)};
+		open_vins_estimator_.feed_measurement_camera({duration_to_double(cam_buffer_->time.time_since_epoch()), {0, 1}, img0, img1});
 
 		// Get the pose returned from SLAM
 		state_ = open_vins_estimator_.get_state();
@@ -275,13 +257,14 @@ public:
 			imu_integrator_input_.put(imu_integrator_input_.allocate(
 				cam_buffer_->time,
 				from_seconds(state_->_calib_dt_CAMtoIMU->value()(0)),
-				imu_params{
-					.gyro_noise = 0.00016968,
-					.acc_noise = 0.002,
-					.gyro_walk = 1.9393e-05,
-					.acc_walk = 0.003,
+                ILLIXR::data_format::imu_params{
+					.gyro_noise = manager_params_.imu_noises.sigma_w,
+					.acc_noise = manager_params_.imu_noises.sigma_a,
+					.gyro_walk = manager_params_.imu_noises.sigma_wb,
+					.acc_walk = manager_params_.imu_noises.sigma_ab,
 					.n_gravity = Eigen::Matrix<double,3,1>(0.0, 0.0, -9.81),
 					.imu_integration_sigma = 1.0,
+					// TODO defaults to 200 for EuRoc, needs to change for ZED
 					.nominal_rate = 200.0,
 				},
 				state_->_imu->bias_a(),
@@ -291,7 +274,7 @@ public:
 				swapped_rot2
 			));
 		}
-		cam_buffer_ = cam;
+		cam_buffer_ = nullptr;
 	}
 
 	~slam2() override = default;
@@ -299,12 +282,12 @@ public:
 private:
 	const std::shared_ptr<switchboard> switchboard_;
 	std::shared_ptr<relative_clock> clock_;
-	switchboard::writer<pose_type> pose_writer_;
-	switchboard::writer<imu_integrator_input> imu_integrator_input_;
-	State *state_{};
+	switchboard::writer<ILLIXR::data_format::pose_type> pose_writer_;
+	switchboard::writer<ILLIXR::data_format::imu_integrator_input> imu_integrator_input_;
+	std::shared_ptr<State> state_;
 
-	switchboard::ptr<const cam_type> cam_buffer_;
-	switchboard::buffered_reader<cam_type> cam_;
+	switchboard::ptr<const ILLIXR::data_format::binocular_cam_type> cam_buffer_;
+	switchboard::buffered_reader<ILLIXR::data_format::binocular_cam_type> cam_;
 
 	VioManagerOptions manager_params_ = create_params();
 	VioManager open_vins_estimator_;

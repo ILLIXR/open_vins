@@ -1,15 +1,17 @@
 cmake_minimum_required(VERSION 3.16)
 
-option(ILLIXR_INTEGRATION "Flag enabling integrated (non-standalone) mode" OFF)
-
 # Project name
-project(ov_msckf)
+project(ov_msckf CXX)
 
-# Include our cmake files
-#set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/)
+if (NOT ILLIXR_INTEGRATION)
+    # Include libraries
+    # The OpenCV version needs to match the one used by cv_bridge otherwise you will get a segmentation fault!
 
-# Find catkin (the ROS build system)
-#find_package(catkin QUIET COMPONENTS roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs cv_bridge ov_core)
+    find_package(Eigen3 REQUIRED)
+    find_package(OpenCV 4 REQUIRED)
+    find_package(Boost REQUIRED COMPONENTS system filesystem thread date_time)
+    find_package(Ceres REQUIRED)
+    message(STATUS "OPENCV: " ${OpenCV_VERSION} " | BOOST: " ${Boost_VERSION} " | CERES: " ${Ceres_VERSION})
 
 # Include libraries
 find_package(Eigen3 REQUIRED)
@@ -20,110 +22,40 @@ else()
     find_package(Boost REQUIRED COMPONENTS system filesystem thread date_time CONFIG)
 endif()
 
-# display message to user
-message(STATUS "EIGEN VERSION: " ${Eigen3_VERSION})
-message(STATUS "OPENCV VERSION: " ${OpenCV_VERSION})
-message(STATUS "BOOST VERSION: " ${Boost_VERSION})
-if(${OpenCV_VERSION_MAJOR} EQUAL 4)
-    add_definitions(-DUSING_OPENCV4)
-endif()
 
-# Describe catkin project
-if (catkin_FOUND)
-    add_definitions(-DROS_AVAILABLE=1)
-    catkin_package(
-            CATKIN_DEPENDS roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs cv_bridge ov_core
-            INCLUDE_DIRS src
-            LIBRARIES ov_msckf_lib
-    )
-else()
-    message(WARNING "CATKIN NOT FOUND BUILDING WITHOUT ROS!")
-endif()
+    # If we will compile with aruco support
+    option(ENABLE_ARUCO_TAGS "Enable or disable aruco tag (disable if no contrib modules)" ON)
+    if (NOT ENABLE_ARUCO_TAGS)
+        add_definitions(-DENABLE_ARUCO_TAGS=0)
+        message(WARNING "DISABLING ARUCOTAG TRACKING!")
+    else ()
+        add_definitions(-DENABLE_ARUCO_TAGS=1)
+    endif ()
 
-if (ILLIXR_INTEGRATION)
     # Enable compile optimizations
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DILLIXR_INTEGRATION -O3 -fsee -fomit-frame-pointer -fno-signed-zeros -fno-math-errno -funroll-loops")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -DNDEBUG -fsee -fomit-frame-pointer -fno-signed-zeros -fno-math-errno -funroll-loops")
     # Enable debug flags (use if you want to debug in gdb)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3 -Wall -Wuninitialized")
-    include_directories(${ILLIXR_ROOT}
-            src
-            ${OpenCV_INCLUDE_DIR}
-            ${EIGEN3_INCLUDE_DIR}
-            ${Boost_INCLUDE_DIRS}
-            ${catkin_INCLUDE_DIRS}
-            )
-else()
-    # Enable compile optimizations
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fsee -fomit-frame-pointer -fno-signed-zeros -fno-math-errno -funroll-loops")
-    # Enable debug flags (use if you want to debug in gdb)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3 -Wall -Wuninitialized")
-    # Include our header files
-    include_directories(
-            src
-            ${OpenCV_INCLUDE_DIR}
-            ${EIGEN3_INCLUDE_DIR}
-            ${Boost_INCLUDE_DIRS}
-            ${catkin_INCLUDE_DIRS}
-    )
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb -Wall -Wuninitialized -fno-omit-frame-pointer")
 
 endif()
 
 
-# Set link libraries used by all binaries
-list(APPEND thirdparty_libraries
-        ${Boost_LIBRARIES}
-        ${OpenCV_LIBRARIES}
-        ${catkin_LIBRARIES}
-)
-
-# If we are not building with ROS then we need to manually link to its headers
-# This isn't that elegant of a way, but this at least allows for building without ROS
-# See this stackoverflow answer: https://stackoverflow.com/a/11217008/7718197
-if (NOT catkin_FOUND)
-    message(WARNING "MANUALLY LINKING TO OV_CORE LIBRARY....")
-    include_directories(${ov_core_SOURCE_DIR}/src/)
-    list(APPEND thirdparty_libraries ov_core_lib)
-endif()
-
-##################################################
-# Make the core library
-##################################################
-list(APPEND library_source_files
-        src/sim/Simulator.cpp
-        src/state/State.cpp
-        src/state/StateHelper.cpp
-        src/state/Propagator.cpp
-        src/core/VioManager.cpp
-        src/update/UpdaterHelper.cpp
-        src/update/UpdaterMSCKF.cpp
-        src/update/UpdaterSLAM.cpp
-)
-if (catkin_FOUND)
-    list(APPEND library_source_files
-        src/core/RosVisualizer.cpp
-    )
-endif()
-add_library(ov_msckf_lib SHARED ${library_source_files})
-target_link_libraries(ov_msckf_lib ${thirdparty_libraries})
-target_include_directories(ov_msckf_lib PUBLIC src)
-set_property(TARGET ov_msckf_lib PROPERTY CXX_STANDARD 17)
-
-
-##################################################
-# Make binary files!
-##################################################
-
-if (ILLIXR_INTEGRATION)
-    find_package(spdlog REQUIRED)
-    set(PLUGIN_NAME plugin.openvins${ILLIXR_BUILD_SUFFIX})
-    add_library(${PLUGIN_NAME} SHARED src/slam2.cpp)
-    target_include_directories(${PLUGIN_NAME} PUBLIC ${ILLIXR_ROOT})
-    target_link_libraries(${PLUGIN_NAME} ov_msckf_lib ${thirdparty_libraries} spdlog::spdlog)
-    set_property(TARGET ${PLUGIN_NAME} PROPERTY CXX_STANDARD 17)
-    install(TARGETS ov_msckf_lib DESTINATION lib)
-    install(TARGETS ${PLUGIN_NAME} DESTINATION lib)
-else()
-    add_executable(run_illixr_msckf src/run_illixr_msckf.cpp)
-    target_link_libraries(run_illixr_msckf ov_msckf_lib ${thirdparty_libraries})
-    set_property(TARGET run_illixr_msckf PROPERTY CXX_STANDARD 17)
+# Find our ROS version!
+# NOTE: Default to using the ROS1 package if both are in our enviroment
+# NOTE: https://github.com/romainreignier/share_ros1_ros2_lib_demo
+if (ENABLE_ROS)
+    find_package(catkin QUIET COMPONENTS roscpp)
+    find_package(ament_cmake QUIET)
+    if (catkin_FOUND)
+        message(STATUS "ROS *1* version found, building ROS1.cmake")
+        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ROS1.cmake)
+    elseif (ament_cmake_FOUND)
+        message(STATUS "ROS *2* version found, building ROS2.cmake")
+        include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ROS2.cmake)
+    else()
+        message(FATAL_ERROR "Unexpected configuration")
+    endif ()
+else ()
+    message(STATUS "No ROS versions found or building with ROS disabled, building ROS1.cmake without ROS")
+    include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/ROS1.cmake)
 endif()
