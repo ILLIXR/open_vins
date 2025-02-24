@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
 
-option(ILLIXR_INTEGRATION "Flag enabling integrated (non-standalone) mode" OFF)
 
 # Project name
 project(ov_msckf)
@@ -11,22 +10,10 @@ project(ov_msckf)
 # Find catkin (the ROS build system)
 #find_package(catkin QUIET COMPONENTS roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs cv_bridge ov_core)
 
-# Include libraries
-find_package(Eigen3 REQUIRED)
-find_package(OpenCV REQUIRED)
-if (CMAKE_VERSION VERSION_LESS "3.30.0")
-    find_package(Boost REQUIRED COMPONENTS system filesystem thread date_time)
-else()
-    find_package(Boost REQUIRED COMPONENTS system filesystem thread date_time CONFIG)
-endif()
-
 # display message to user
 message(STATUS "EIGEN VERSION: " ${Eigen3_VERSION})
 message(STATUS "OPENCV VERSION: " ${OpenCV_VERSION})
 message(STATUS "BOOST VERSION: " ${Boost_VERSION})
-if(${OpenCV_VERSION_MAJOR} EQUAL 4)
-    add_definitions(-DUSING_OPENCV4)
-endif()
 
 # Describe catkin project
 if (catkin_FOUND)
@@ -122,7 +109,9 @@ if (ILLIXR_INTEGRATION)
         set(ILLIXR_BUILD_SUFFIX ".opt")
     endif()
     set(PLUGIN_NAME plugin.openvins${ILLIXR_BUILD_SUFFIX})
-    add_library(${PLUGIN_NAME} SHARED src/slam2.cpp)
+    add_library(${PLUGIN_NAME} SHARED src/slam2.cpp
+                src/slam2.hpp
+    )
     target_include_directories(${PLUGIN_NAME} PUBLIC ${ILLIXR_ROOT})
     target_link_libraries(${PLUGIN_NAME} ov_msckf_lib ${thirdparty_libraries} spdlog::spdlog)
     set_property(TARGET ${PLUGIN_NAME} PROPERTY CXX_STANDARD 17)

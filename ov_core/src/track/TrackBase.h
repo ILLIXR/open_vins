@@ -30,12 +30,7 @@
 #include <Eigen/StdVector>
 
 #include <boost/thread.hpp>
-#ifdef USING_OPENCV4
 #include <opencv2/core.hpp>
-#else
-#include <opencv/cv.hpp>
-#include <opencv2/core/core.hpp>
-#endif
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/calib3d.hpp>
 

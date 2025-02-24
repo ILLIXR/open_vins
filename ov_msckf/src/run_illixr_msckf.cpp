@@ -19,12 +19,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifdef USING_OPENCV4
 #include <opencv2/core.hpp>
-#else
-#include <opencv/cv.hpp>
-#include <opencv2/core/core.hpp>
-#endif
 #include <opencv2/highgui/highgui.hpp>
 
 #include "core/VioManager.h"
@@ -374,21 +369,3 @@ int main(int argc, char** argv) {
     cout << "DONE!" << endl;
     return EXIT_SUCCESS;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

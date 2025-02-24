@@ -8,22 +8,11 @@ project(ov_core)
 # Find catkin (the ROS build system)
 #find_package(catkin QUIET COMPONENTS roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs cv_bridge)
 
-# Include libraries
-find_package(Eigen3 REQUIRED)
-find_package(OpenCV REQUIRED)
-if (CMAKE_VERSION VERSION_LESS "3.30.0")
-    find_package(Boost REQUIRED COMPONENTS system filesystem thread date_time)
-else()
-    find_package(Boost REQUIRED COMPONENTS system filesystem thread date_time CONFIG)
-endif()
 
 # display message to user
 message(STATUS "EIGEN VERSION: " ${Eigen3_VERSION})
 message(STATUS "OPENCV VERSION: " ${OpenCV_VERSION})
 message(STATUS "BOOST VERSION: " ${Boost_VERSION})
-if(${OpenCV_VERSION_MAJOR} EQUAL 4)
-    add_definitions(-DUSING_OPENCV4)
-endif()
 
 # Describe catkin project
 if (catkin_FOUND)
