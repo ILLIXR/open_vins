@@ -348,18 +348,18 @@ void TrackKLT::feed_stereo(double timestamp, cv::Mat &img_leftin, cv::Mat &img_r
     total_db_time += db_time;
     total_time += total;
 
-    printf(CYAN "[TIME-KLT]: %.4f ms for pyramid\n" RESET, pyramid_time);
-    printf(CYAN "[TIME-KLT]: %.4f ms for detection\n" RESET, detection_time);
-    printf(CYAN "[TIME-KLT]: %.4f ms for temporal klt\n" RESET, temporal_klt_time);
-    printf(CYAN "[TIME-KLT]: %.4f ms for stereo klt\n" RESET, stereo_klt_time);
-    printf(CYAN "[TIME-KLT]: %.4f ms for feature DB update (%d features)\n" RESET, db_time, (int)good_left.size());
-    printf(CYAN "[TIME-KLT]: %.4f ms for total\n" RESET, total);
+    // printf(CYAN "[TIME-KLT]: %.4f ms for pyramid\n" RESET, pyramid_time);
+    // printf(CYAN "[TIME-KLT]: %.4f ms for detection\n" RESET, detection_time);
+    // printf(CYAN "[TIME-KLT]: %.4f ms for temporal klt\n" RESET, temporal_klt_time);
+    // printf(CYAN "[TIME-KLT]: %.4f ms for stereo klt\n" RESET, stereo_klt_time);
+    // printf(CYAN "[TIME-KLT]: %.4f ms for feature DB update (%d features)\n" RESET, db_time, (int)good_left.size());
+    // printf(CYAN "[TIME-KLT]: %.4f ms for total\n" RESET, total);
 
-    printf(WHITE "[AVG-TIME-KLT]: %.4f ms for pyramid\n" RESET, total_pyramid_time / (double) total_images);
-    printf(WHITE "[AVG-TIME-KLT]: %.4f ms for detection\n" RESET, total_detection_time / (double) total_images);
-    printf(WHITE "[AVG-TIME-KLT]: %.4f ms for matching\n" RESET, total_matching_time / (double) total_images);
-    printf(WHITE "[AVG-TIME-KLT]: %.4f ms for feature DB update\n" RESET, total_db_time / (double) total_images);
-    printf(WHITE "[AVG-TIME-KLT]: %.4f ms for total\n" RESET, total_time / (double) total_images);
+    // printf(WHITE "[AVG-TIME-KLT]: %.4f ms for pyramid\n" RESET, total_pyramid_time / (double) total_images);
+    // printf(WHITE "[AVG-TIME-KLT]: %.4f ms for detection\n" RESET, total_detection_time / (double) total_images);
+    // printf(WHITE "[AVG-TIME-KLT]: %.4f ms for matching\n" RESET, total_matching_time / (double) total_images);
+    // printf(WHITE "[AVG-TIME-KLT]: %.4f ms for feature DB update\n" RESET, total_db_time / (double) total_images);
+    // printf(WHITE "[AVG-TIME-KLT]: %.4f ms for total\n" RESET, total_time / (double) total_images);
 #endif /// NDEBUG
 }
 

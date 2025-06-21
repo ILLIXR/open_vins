@@ -14,6 +14,7 @@ using namespace ov_msckf;
 
 // Comment in if using ZED instead of offline_imu_cam
 // TODO: Pull from config YAML file
+// #define HAVE_ZED
 
 VioManagerOptions create_params() {
     VioManagerOptions params;
@@ -249,6 +250,7 @@ void slam2::feed_imu_cam(const switchboard::ptr<const imu_type> &datum, [[maybe_
     if (open_vins_estimator_.initialized()) {
         pose_.put(pose_.allocate(
                 cam_buffer_->time,
+                datum->time,
                 swapped_pos,
                 swapped_rot
         ));

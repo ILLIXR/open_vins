@@ -288,11 +288,11 @@ bool VioManager::try_to_initialize() {
 
     // Else we are good to go, print out our stats
     #ifndef NDEBUG
-        printf(GREEN "[INIT]: orientation = %.4f, %.4f, %.4f, %.4f\n" RESET,state->_imu->quat()(0),state->_imu->quat()(1),state->_imu->quat()(2),state->_imu->quat()(3));
-        printf(GREEN "[INIT]: bias gyro = %.4f, %.4f, %.4f\n" RESET,state->_imu->bias_g()(0),state->_imu->bias_g()(1),state->_imu->bias_g()(2));
-        printf(GREEN "[INIT]: velocity = %.4f, %.4f, %.4f\n" RESET,state->_imu->vel()(0),state->_imu->vel()(1),state->_imu->vel()(2));
-        printf(GREEN "[INIT]: bias accel = %.4f, %.4f, %.4f\n" RESET,state->_imu->bias_a()(0),state->_imu->bias_a()(1),state->_imu->bias_a()(2));
-        printf(GREEN "[INIT]: position = %.4f, %.4f, %.4f\n" RESET,state->_imu->pos()(0),state->_imu->pos()(1),state->_imu->pos()(2));
+        // printf(GREEN "[INIT]: orientation = %.4f, %.4f, %.4f, %.4f\n" RESET,state->_imu->quat()(0),state->_imu->quat()(1),state->_imu->quat()(2),state->_imu->quat()(3));
+        // printf(GREEN "[INIT]: bias gyro = %.4f, %.4f, %.4f\n" RESET,state->_imu->bias_g()(0),state->_imu->bias_g()(1),state->_imu->bias_g()(2));
+        // printf(GREEN "[INIT]: velocity = %.4f, %.4f, %.4f\n" RESET,state->_imu->vel()(0),state->_imu->vel()(1),state->_imu->vel()(2));
+        // printf(GREEN "[INIT]: bias accel = %.4f, %.4f, %.4f\n" RESET,state->_imu->bias_a()(0),state->_imu->bias_a()(1),state->_imu->bias_a()(2));
+        // printf(GREEN "[INIT]: position = %.4f, %.4f, %.4f\n" RESET,state->_imu->pos()(0),state->_imu->pos()(1),state->_imu->pos()(2));
     #endif
     return true;
 
@@ -546,15 +546,15 @@ void VioManager::do_feature_propagate_update(double timestamp) {
 
 #ifndef NDEBUG
     // Timing information
-    printf(BLUE "[TIME]: %.4f ms for tracking\n" RESET, time_track);
-    printf(BLUE "[TIME]: %.4f ms for propagation\n" RESET, time_prop);
-    printf(BLUE "[TIME]: %.4f ms for MSCKF update (%d features)\n" RESET, time_msckf, (int)featsup_MSCKF.size());
-    if(state->_options.max_slam_features > 0) {
-        printf(BLUE "[TIME]: %.4f ms for SLAM update (%d feats)\n" RESET, time_slam_update, (int)feats_slam_UPDATE.size());
-        printf(BLUE "[TIME]: %.4f ms for SLAM delayed init (%d feats)\n" RESET, time_slam_delay, (int)feats_slam_DELAYED.size());
-    }
-    printf(BLUE "[TIME]: %.4f ms for marginalization (%d clones in state)\n" RESET, time_marg, (int)state->_clones_IMU.size());
-    printf(BLUE "[TIME]: %.4f ms for total\n" RESET, time_total);
+    // printf(BLUE "[TIME]: %.4f ms for tracking\n" RESET, time_track);
+    // printf(BLUE "[TIME]: %.4f ms for propagation\n" RESET, time_prop);
+    // printf(BLUE "[TIME]: %.4f ms for MSCKF update (%d features)\n" RESET, time_msckf, (int)featsup_MSCKF.size());
+    // if(state->_options.max_slam_features > 0) {
+    //     printf(BLUE "[TIME]: %.4f ms for SLAM update (%d feats)\n" RESET, time_slam_update, (int)feats_slam_UPDATE.size());
+    //     printf(BLUE "[TIME]: %.4f ms for SLAM delayed init (%d feats)\n" RESET, time_slam_delay, (int)feats_slam_DELAYED.size());
+    // }
+    // printf(BLUE "[TIME]: %.4f ms for marginalization (%d clones in state)\n" RESET, time_marg, (int)state->_clones_IMU.size());
+    // printf(BLUE "[TIME]: %.4f ms for total\n" RESET, time_total);
 #endif
 
     // Keep track of average
@@ -565,9 +565,9 @@ void VioManager::do_feature_propagate_update(double timestamp) {
 
 #ifndef NDEBUG
     // Average time breakdown between frontend and backend
-    printf(GREEN "[AVG-TIME]: %.4f ms for tracking\n" RESET, total_tracking_time / (double) total_images);
-    printf(GREEN "[AVG-TIME]: %.4f ms for filter\n" RESET, total_filter_time / (double) total_images);
-    printf(GREEN "[AVG-TIME]: %.4f ms for total\n" RESET, total_frame_time / (double) total_images);
+    // printf(GREEN "[AVG-TIME]: %.4f ms for tracking\n" RESET, total_tracking_time / (double) total_images);
+    // printf(GREEN "[AVG-TIME]: %.4f ms for filter\n" RESET, total_filter_time / (double) total_images);
+    // printf(GREEN "[AVG-TIME]: %.4f ms for total\n" RESET, total_frame_time / (double) total_images);
 #endif
 
     // Finally if we are saving stats to file, lets save it to file
@@ -598,19 +598,19 @@ void VioManager::do_feature_propagate_update(double timestamp) {
 
 #ifndef NDEBUG
     // Debug, print our current state
-    printf("q_GtoI = %.3f,%.3f,%.3f,%.3f | p_IinG = %.3f,%.3f,%.3f | dist = %.2f (meters)\n",
-            state->_imu->quat()(0),state->_imu->quat()(1),state->_imu->quat()(2),state->_imu->quat()(3),
-            state->_imu->pos()(0),state->_imu->pos()(1),state->_imu->pos()(2),distance);
-    printf("bg = %.4f,%.4f,%.4f | ba = %.4f,%.4f,%.4f\n",
-             state->_imu->bias_g()(0),state->_imu->bias_g()(1),state->_imu->bias_g()(2),
-             state->_imu->bias_a()(0),state->_imu->bias_a()(1),state->_imu->bias_a()(2));
+    // printf("q_GtoI = %.3f,%.3f,%.3f,%.3f | p_IinG = %.3f,%.3f,%.3f | dist = %.2f (meters)\n",
+    //         state->_imu->quat()(0),state->_imu->quat()(1),state->_imu->quat()(2),state->_imu->quat()(3),
+    //         state->_imu->pos()(0),state->_imu->pos()(1),state->_imu->pos()(2),distance);
+    // printf("bg = %.4f,%.4f,%.4f | ba = %.4f,%.4f,%.4f\n",
+    //          state->_imu->bias_g()(0),state->_imu->bias_g()(1),state->_imu->bias_g()(2),
+    //          state->_imu->bias_a()(0),state->_imu->bias_a()(1),state->_imu->bias_a()(2));
 #endif
 
 
 #ifndef NDEBUG
     // Debug for camera imu offset
     if(state->_options.do_calib_camera_timeoffset) {
-        printf("camera-imu timeoffset = %.5f\n",state->_calib_dt_CAMtoIMU->value()(0));
+        // printf("camera-imu timeoffset = %.5f\n",state->_calib_dt_CAMtoIMU->value()(0));
     }
 #endif
 
@@ -619,9 +619,9 @@ void VioManager::do_feature_propagate_update(double timestamp) {
     if(state->_options.do_calib_camera_intrinsics) {
         for(int i=0; i<state->_options.num_cameras; i++) {
             Vec* calib = state->_cam_intrinsics.at(i);
-            printf("cam%d intrinsics = %.3f,%.3f,%.3f,%.3f | %.3f,%.3f,%.3f,%.3f\n",(int)i,
-                     calib->value()(0),calib->value()(1),calib->value()(2),calib->value()(3),
-                     calib->value()(4),calib->value()(5),calib->value()(6),calib->value()(7));
+            // printf("cam%d intrinsics = %.3f,%.3f,%.3f,%.3f | %.3f,%.3f,%.3f,%.3f\n",(int)i,
+            //          calib->value()(0),calib->value()(1),calib->value()(2),calib->value()(3),
+            //          calib->value()(4),calib->value()(5),calib->value()(6),calib->value()(7));
         }
     }
 #endif
@@ -631,9 +631,9 @@ void VioManager::do_feature_propagate_update(double timestamp) {
     if(state->_options.do_calib_camera_pose) {
         for(int i=0; i<state->_options.num_cameras; i++) {
             PoseJPL* calib = state->_calib_IMUtoCAM.at(i);
-            printf("cam%d extrinsics = %.3f,%.3f,%.3f,%.3f | %.3f,%.3f,%.3f\n",(int)i,
-                     calib->quat()(0),calib->quat()(1),calib->quat()(2),calib->quat()(3),
-                     calib->pos()(0),calib->pos()(1),calib->pos()(2));
+            // printf("cam%d extrinsics = %.3f,%.3f,%.3f,%.3f | %.3f,%.3f,%.3f\n",(int)i,
+            //          calib->quat()(0),calib->quat()(1),calib->quat()(2),calib->quat()(3),
+            //          calib->pos()(0),calib->pos()(1),calib->pos()(2));
         }
     }
 #endif
