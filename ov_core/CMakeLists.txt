@@ -69,7 +69,7 @@ target_link_libraries(ov_core_lib ${thirdparty_libraries})
 target_include_directories(ov_core_lib PUBLIC src)
 set_property(TARGET ov_core_lib PROPERTY CXX_STANDARD 17)
 
-if(ILLIXR_INTEGRATION)
+if(ILLIXR_INTEGRATION AND NOT ANDROID_BUILD)
     install(TARGETS ov_core_lib DESTINATION lib)
 endif()
 ##################################################
