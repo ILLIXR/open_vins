@@ -43,6 +43,8 @@ else()
 endif()
 if(NOT ANDROID_BUILD)
     find_package(spdlog REQUIRED)
+else()
+    find_package(spdlog_android 1.15.3 REQUIRED)
 endif()
 
 add_subdirectory(ov_core)
