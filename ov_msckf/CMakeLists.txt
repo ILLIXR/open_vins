@@ -91,8 +91,33 @@ if (catkin_FOUND)
     )
 endif()
 add_library(ov_msckf_lib SHARED ${library_source_files})
-target_link_libraries(ov_msckf_lib ${thirdparty_libraries})
-target_include_directories(ov_msckf_lib PUBLIC src)
+if(ANDROID_BUILD)
+    target_link_libraries(ov_msckf_lib
+                          EGL
+                          GLESv3
+                          ov_core_lib
+                          opencv_core
+                          opencv_imgproc
+                          opencv_tracking
+                          opencv_calib3d
+                          Boost::chrono
+                          Boost::thread
+                          Boost::filesystem
+                          Boost::atomic
+                          android
+                          Eigen3::Eigen
+    )
+
+    target_include_directories(ov_msckf_lib PRIVATE
+                               ${OpenCV_LIBS}
+                               ${jnigraphics-lib}
+                               ${ANDROID_NDK}/sources/android/native_app_glue
+    )
+
+else()
+    target_link_libraries(ov_msckf_lib ${thirdparty_libraries})
+    target_include_directories(ov_msckf_lib PUBLIC src)
+endif()
 set_property(TARGET ov_msckf_lib PROPERTY CXX_STANDARD 17)
 
 
@@ -101,8 +126,6 @@ set_property(TARGET ov_msckf_lib PROPERTY CXX_STANDARD 17)
 ##################################################
 
 if (ILLIXR_INTEGRATION)
-    if(NOT ANDROID_BUILD)
-    endif()
     string(TOLOWER "${CMAKE_BUILD_TYPE}" lower_type)
     if(lower_type MATCHES "debug")
         set(ILLIXR_BUILD_SUFFIX ".dbg")
@@ -114,15 +137,36 @@ if (ILLIXR_INTEGRATION)
                 src/slam2.hpp
     )
     target_include_directories(${PLUGIN_NAME} PUBLIC ${ILLIXR_ROOT})
-    target_link_libraries(${PLUGIN_NAME} ov_msckf_lib ${thirdparty_libraries})
-    set_property(TARGET ${PLUGIN_NAME} PROPERTY CXX_STANDARD 17)
-    if(NOT ANDROID_BUILD)
+    if(ANDROID_BUILD)
+        target_include_directories(${PLUGIN_NAME} PRIVATE
+                                   ${OpenCV_LIBS}
+                                   ${jnigraphics-lib}
+                                   ${ANDROID_NDK}/sources/android/native_app_glue
+        )
+        target_link_libraries(${PLUGIN_NAME}
+                              EGL
+                              GLESv3
+                              log
+                              ov_core_lib
+                              ov_msckf_lib
+                              opencv_core
+                              opencv_imgproc
+                              opencv_tracking
+                              Boost::chrono
+                              Boost::thread
+                              Boost::filesystem
+                              Boost::atomic
+                              Eigen3::Eigen
+        )
+
+    else()
+        target_link_libraries(${PLUGIN_NAME} ov_msckf_lib ${thirdparty_libraries})
         target_link_libraries(${PLUGIN_NAME} spdlog::spdlog)
         install(TARGETS ov_msckf_lib DESTINATION lib)
         install(TARGETS ${PLUGIN_NAME} DESTINATION lib)
-    else()
-        target_link_libraries(${PLUGIN_NAME} spdlog::spdlog_android)
     endif()
+    set_property(TARGET ${PLUGIN_NAME} PROPERTY CXX_STANDARD 17)
+
 else()
     add_executable(run_illixr_msckf src/run_illixr_msckf.cpp)
     target_link_libraries(run_illixr_msckf ov_msckf_lib ${thirdparty_libraries})

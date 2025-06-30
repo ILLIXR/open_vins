@@ -15,7 +15,7 @@ message(STATUS "OPENCV VERSION: " ${OpenCV_VERSION})
 message(STATUS "BOOST VERSION: " ${Boost_VERSION})
 
 # Describe catkin project
-if (catkin_FOUND)
+if(catkin_FOUND)
     add_definitions(-DROS_AVAILABLE=1)
     catkin_package(
             CATKIN_DEPENDS roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs cv_bridge
@@ -44,29 +44,60 @@ include_directories(
 
 # Set link libraries used by all binaries
 list(APPEND thirdparty_libraries
-        ${Boost_LIBRARIES}
-        ${OpenCV_LIBRARIES}
-        ${catkin_LIBRARIES}
+     ${Boost_LIBRARIES}
+     ${OpenCV_LIBRARIES}
+     ${catkin_LIBRARIES}
 )
 
 ##################################################
 # Make the core library
 ##################################################
 add_library(ov_core_lib SHARED
-        src/dummy.cpp
-        src/init/InertialInitializer.cpp
-        src/sim/BsplineSE3.cpp
-        src/track/TrackBase.cpp
-        src/track/TrackAruco.cpp
-        src/track/TrackDescriptor.cpp
-        src/track/TrackKLT.cpp
-        src/track/TrackSIM.cpp
-        src/types/Landmark.cpp
-        src/feat/Feature.cpp
-        src/feat/FeatureInitializer.cpp
+            src/dummy.cpp
+            src/init/InertialInitializer.cpp
+            src/sim/BsplineSE3.cpp
+            src/track/TrackBase.cpp
+            src/track/TrackAruco.cpp
+            src/track/TrackDescriptor.cpp
+            src/track/TrackKLT.cpp
+            src/track/TrackSIM.cpp
+            src/types/Landmark.cpp
+            src/feat/Feature.cpp
+            src/feat/FeatureInitializer.cpp
 )
-target_link_libraries(ov_core_lib ${thirdparty_libraries})
-target_include_directories(ov_core_lib PUBLIC src)
+if(ANDROID_BUILD)
+    target_link_libraries(ov_core_lib
+                          EGL
+                          GLESv3
+                          opencv_core
+                          opencv_imgproc
+                          opencv_tracking
+                          opencv_imgcodecs
+                          opencv_video
+                          opencv_calib3d
+                          opencv_highgui
+                          opencv_features2d
+                          opencv_aruco
+                          opencv_dnn
+                          opencv_flann
+                          opencv_objdetect
+                          Boost::chrono
+                          Boost::thread
+                          Boost::filesystem
+                          Boost::atomic
+                          android
+                          Eigen3::Eigen
+    )
+
+    target_include_directories(ov_core_lib PRIVATE
+                               ${OpenCV_LIBS}
+                               ${jnigraphics-lib}
+                               ${ANDROID_NDK}/sources/android/native_app_glue
+    )
+else()
+    target_link_libraries(ov_core_lib ${thirdparty_libraries})
+    target_include_directories(ov_core_lib PUBLIC src)
+endif()
 set_property(TARGET ov_core_lib PROPERTY CXX_STANDARD 17)
 
 if(ILLIXR_INTEGRATION AND NOT ANDROID_BUILD)
