@@ -201,7 +201,7 @@ bool FeatureInitializer::single_gaussnewton(Feature* feat, std::unordered_map<si
             Hess.setZero();
             grad.setZero();
 
-            double err = 0;
+            //double err = 0;
 
             // Loop through each camera for this feature
             for (auto const& pair : feat->timestamps) {
@@ -248,7 +248,7 @@ bool FeatureInitializer::single_gaussnewton(Feature* feat, std::unordered_map<si
                     //=====================================================================================
 
                     // Append to our summation variables
-                    err += std::pow(res.norm(), 2);
+                    //err += std::pow(res.norm(), 2);
                     grad.noalias() += H.transpose() * res.cast<double>();
                     Hess.noalias() += H.transpose() * H;
                 }
@@ -331,9 +331,9 @@ bool FeatureInitializer::single_gaussnewton(Feature* feat, std::unordered_map<si
     // 2. If the feature is invalid
     // 3. If the baseline ratio is large
     if(feat->p_FinA(2) < _options.min_dist
-        || feat->p_FinA(2) > _options.max_dist
-        || (feat->p_FinA.norm() / base_line_max) > _options.max_baseline
-        || std::isnan(feat->p_FinA.norm())) {
+       || feat->p_FinA(2) > _options.max_dist
+       || (feat->p_FinA.norm() / base_line_max) > _options.max_baseline
+       || std::isnan(feat->p_FinA.norm())) {
         return false;
     }
 

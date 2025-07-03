@@ -4,7 +4,7 @@
 #include <opencv2/core.hpp>
 
 #include <cmath>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <utility>
 
 

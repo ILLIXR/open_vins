@@ -71,7 +71,7 @@ void TrackDescriptor::feed_monocular(double timestamp, cv::Mat &imgin, size_t ca
     cv::Mat good_desc_left;
 
     // Count how many we have tracked from the last time
-    int num_tracklast = 0;
+    //int num_tracklast = 0;
 
     // Loop through all current left to right points
     // We want to see if any of theses have matches to the previous frame
@@ -93,7 +93,7 @@ void TrackDescriptor::feed_monocular(double timestamp, cv::Mat &imgin, size_t ca
             good_left.push_back(pts_new[i]);
             good_desc_left.push_back(desc_new.row((int)i));
             good_ids_left.push_back(ids_last[cam_id][idll]);
-            num_tracklast++;
+            //num_tracklast++;
         } else {
             // Else just append the current feature and its unique ID
             good_left.push_back(pts_new[i]);
@@ -215,7 +215,7 @@ void TrackDescriptor::feed_stereo(double timestamp, cv::Mat &img_leftin, cv::Mat
     assert(pts_left_new.size() == pts_right_new.size());
 
     // Count how many we have tracked from the last time
-    int num_tracklast = 0;
+    //int num_tracklast = 0;
 
     // Loop through all current left to right points
     // We want to see if any of theses have matches to the previous frame
@@ -248,7 +248,7 @@ void TrackDescriptor::feed_stereo(double timestamp, cv::Mat &img_leftin, cv::Mat
             good_desc_right.push_back(desc_right_new.row((int)i));
             good_ids_left.push_back(ids_last[cam_id_left][idll]);
             good_ids_right.push_back(ids_last[cam_id_right][idrr]);
-            num_tracklast++;
+            //num_tracklast++;
         } else {
             // Else just append the current feature and its unique ID
             good_left.push_back(pts_left_new[i]);

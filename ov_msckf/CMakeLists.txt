@@ -33,12 +33,12 @@ if (ILLIXR_INTEGRATION)
     # Enable debug flags (use if you want to debug in gdb)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3 -Wall -Wuninitialized")
     include_directories(${ILLIXR_ROOT}
-            src
-            ${OpenCV_INCLUDE_DIR}
-            ${EIGEN3_INCLUDE_DIR}
-            ${Boost_INCLUDE_DIRS}
-            ${catkin_INCLUDE_DIRS}
-            )
+                        src
+                        ${OpenCV_INCLUDE_DIR}
+                        ${EIGEN3_INCLUDE_DIR}
+                        ${Boost_INCLUDE_DIRS}
+                        ${catkin_INCLUDE_DIRS}
+    )
 else()
     # Enable compile optimizations
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fsee -fomit-frame-pointer -fno-signed-zeros -fno-math-errno -funroll-loops")
@@ -58,9 +58,9 @@ endif()
 
 # Set link libraries used by all binaries
 list(APPEND thirdparty_libraries
-        ${Boost_LIBRARIES}
-        ${OpenCV_LIBRARIES}
-        ${catkin_LIBRARIES}
+     ${Boost_LIBRARIES}
+     ${OpenCV_LIBRARIES}
+     ${catkin_LIBRARIES}
 )
 
 # If we are not building with ROS then we need to manually link to its headers
@@ -76,18 +76,18 @@ endif()
 # Make the core library
 ##################################################
 list(APPEND library_source_files
-        src/sim/Simulator.cpp
-        src/state/State.cpp
-        src/state/StateHelper.cpp
-        src/state/Propagator.cpp
-        src/core/VioManager.cpp
-        src/update/UpdaterHelper.cpp
-        src/update/UpdaterMSCKF.cpp
-        src/update/UpdaterSLAM.cpp
+     src/sim/Simulator.cpp
+     src/state/State.cpp
+     src/state/StateHelper.cpp
+     src/state/Propagator.cpp
+     src/core/VioManager.cpp
+     src/update/UpdaterHelper.cpp
+     src/update/UpdaterMSCKF.cpp
+     src/update/UpdaterSLAM.cpp
 )
 if (catkin_FOUND)
     list(APPEND library_source_files
-        src/core/RosVisualizer.cpp
+         src/core/RosVisualizer.cpp
     )
 endif()
 add_library(ov_msckf_lib SHARED ${library_source_files})
@@ -106,6 +106,7 @@ if(ANDROID_BUILD)
                           Boost::atomic
                           android
                           Eigen3::Eigen
+                          spdlog::spdlog_android
     )
 
     target_include_directories(ov_msckf_lib PRIVATE
@@ -159,6 +160,8 @@ if (ILLIXR_INTEGRATION)
                               Eigen3::Eigen
         )
 
+        install(TARGETS ov_msckf_lib LIBRARY DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+        install(TARGETS ${PLUGIN_NAME} LIBRARY DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
     else()
         target_link_libraries(${PLUGIN_NAME} ov_msckf_lib ${thirdparty_libraries})
         target_link_libraries(${PLUGIN_NAME} spdlog::spdlog)

@@ -240,10 +240,10 @@ namespace ov_msckf {
             assert(p_wh.at(i).size()==2);
 
             // Insert
-            params.camera_fisheye.insert({i, p_fish.at(i)});
-            params.camera_intrinsics.insert({i, intrinsics});
-            params.camera_extrinsics.insert({i, extrinsics});
-            params.camera_wh.insert({i, {p_wh.at(i).at(0),p_wh.at(i).at(1)}});
+            params.camera_fisheye.insert({static_cast<size_t>(i), p_fish.at(i)});
+            params.camera_intrinsics.insert({static_cast<size_t>(i), intrinsics});
+            params.camera_extrinsics.insert({static_cast<size_t>(i), extrinsics});
+            params.camera_wh.insert({static_cast<size_t>(i), {p_wh.at(i).at(0),p_wh.at(i).at(1)}});
 
         }
 

@@ -69,7 +69,7 @@ void Propagator::propagate_and_clone(State* state, double timestamp) {
     // We will then add the noise to the IMU portion of the state
     Eigen::Matrix<double,15,15> Phi_summed = Eigen::Matrix<double,15,15>::Identity();
     Eigen::Matrix<double,15,15> Qd_summed = Eigen::Matrix<double,15,15>::Zero();
-    double dt_summed = 0;
+    //double dt_summed = 0;
 
     // Loop through all IMU messages, and use them to move the state forward in time
     // This uses the zero'th order quat, and then constant acceleration discrete
@@ -90,7 +90,7 @@ void Propagator::propagate_and_clone(State* state, double timestamp) {
             Phi_summed = F * Phi_summed;
             Qd_summed = F * Qd_summed * F.transpose() + Qdi;
             Qd_summed = 0.5*(Qd_summed+Qd_summed.transpose());
-            dt_summed +=  prop_data.at(i+1).timestamp-prop_data.at(i).timestamp;
+            //dt_summed +=  prop_data.at(i+1).timestamp-prop_data.at(i).timestamp;
         }
     }
 
@@ -142,7 +142,7 @@ void Propagator::fast_state_propagate(State *state, double timestamp, Eigen::Mat
         Eigen::Matrix<double,3,1> a_hat ;
         Eigen::Matrix<double,3,1> w_hat2;
         Eigen::Matrix<double,3,1> a_hat2;
-    
+
         for(size_t i=0; i<prop_data.size()-1; i++) {
 
             // Time elapsed over interval
@@ -176,7 +176,7 @@ void Propagator::fast_state_propagate(State *state, double timestamp, Eigen::Mat
     state_plus = Eigen::Matrix<double,13,1>::Zero();
     state_plus.block(0,0,4,1) = state->_imu->quat();
     state_plus.block(4,0,3,1) = state->_imu->pos();
-    state_plus.block(7,0,3,1) = state->_imu->vel();    
+    state_plus.block(7,0,3,1) = state->_imu->vel();
     if(prop_data.size() > 1) state_plus.block(10,0,3,1) = prop_data.at(prop_data.size()-2).wm - state->_imu->bias_g();
     else if(!prop_data.empty()) state_plus.block(10,0,3,1) = prop_data.at(prop_data.size()-1).wm - state->_imu->bias_g();
 
@@ -401,9 +401,9 @@ void Propagator::predict_and_compute(State *state, const IMUDATA data_minus, con
 
 
 void Propagator::predict_mean_discrete(State *state, double dt,
-                                        const Eigen::Vector3d &w_hat1, const Eigen::Vector3d &a_hat1,
-                                        const Eigen::Vector3d &w_hat2, const Eigen::Vector3d &a_hat2,
-                                        Eigen::Vector4d &new_q, Eigen::Vector3d &new_v, Eigen::Vector3d &new_p) {
+                                       const Eigen::Vector3d &w_hat1, const Eigen::Vector3d &a_hat1,
+                                       const Eigen::Vector3d &w_hat2, const Eigen::Vector3d &a_hat2,
+                                       Eigen::Vector4d &new_q, Eigen::Vector3d &new_v, Eigen::Vector3d &new_p) {
 
     // If we are averaging the IMU, then do so
     Eigen::Vector3d w_hat = w_hat1;
@@ -520,6 +520,3 @@ void Propagator::predict_mean_rk4(State *state, double dt,
     new_v = v_0+(1.0/6.0)*k1_v+(1.0/3.0)*k2_v+(1.0/3.0)*k3_v+(1.0/6.0)*k4_v;
 
 }
-
-
-
