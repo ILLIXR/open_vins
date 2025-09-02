@@ -32,7 +32,7 @@ if (ILLIXR_INTEGRATION)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DILLIXR_INTEGRATION -O3 -fsee -fomit-frame-pointer -fno-signed-zeros -fno-math-errno -funroll-loops")
     # Enable debug flags (use if you want to debug in gdb)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3 -Wall -Wuninitialized")
-    include_directories(${ILLIXR_ROOT}
+    include_directories(${ILLIXR_ROOT}/include
                         src
                         ${OpenCV_INCLUDE_DIR}
                         ${EIGEN3_INCLUDE_DIR}
@@ -134,8 +134,11 @@ if (ILLIXR_INTEGRATION)
     set(PLUGIN_NAME plugin.openvins${ILLIXR_BUILD_SUFFIX})
     add_library(${PLUGIN_NAME} SHARED src/slam2.cpp
                 src/slam2.hpp
+                ${ILLIXR_ROOT}/utils/switchboard.cpp
+                ${ILLIXR_ROOT}/utils/switchboard.hpp
     )
-    target_include_directories(${PLUGIN_NAME} PUBLIC ${ILLIXR_ROOT})
+
+    target_include_directories(${PLUGIN_NAME} PUBLIC ${ILLIXR_ROOT}/include)
     if(ANDROID_BUILD)
         target_include_directories(${PLUGIN_NAME} PRIVATE
                                    ${OpenCV_LIBS}
