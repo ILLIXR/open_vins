@@ -67,8 +67,6 @@ add_library(ov_core_lib SHARED
 )
 if(ANDROID_BUILD)
     target_link_libraries(ov_core_lib
-                          EGL
-                          GLESv3
                           opencv_core
                           opencv_imgproc
                           opencv_tracking

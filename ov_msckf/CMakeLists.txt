@@ -93,8 +93,6 @@ endif()
 add_library(ov_msckf_lib SHARED ${library_source_files})
 if(ANDROID_BUILD)
     target_link_libraries(ov_msckf_lib
-                          EGL
-                          GLESv3
                           ov_core_lib
                           opencv_core
                           opencv_imgproc
@@ -145,9 +143,6 @@ if (ILLIXR_INTEGRATION)
                                    ${ANDROID_NDK}/sources/android/native_app_glue
         )
         target_link_libraries(${PLUGIN_NAME}
-                              EGL
-                              GLESv3
-                              log
                               ov_core_lib
                               ov_msckf_lib
                               opencv_core
@@ -157,7 +152,9 @@ if (ILLIXR_INTEGRATION)
                               Boost::thread
                               Boost::filesystem
                               Boost::atomic
+                              android
                               Eigen3::Eigen
+                              spdlog::spdlog_android
         )
 
         install(TARGETS ov_msckf_lib LIBRARY DESTINATION ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
