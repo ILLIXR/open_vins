@@ -34,8 +34,8 @@ void UpdaterSLAM::delayed_init(State *state, std::vector<Feature*>& feature_vec)
         return;
 
     // Start timing
-    boost::posix_time::ptime rT0, rT1, rT2, rT3, rT4, rT5, rT6, rT7;
-    rT0 =  boost::posix_time::microsec_clock::local_time();
+    //boost::posix_time::ptime rT0, rT1, rT2, rT3, rT4, rT5, rT6, rT7;
+    //rT0 =  boost::posix_time::microsec_clock::local_time();
 
     // 0. Get all timestamps our clones are at (and thus valid measurement times)
     std::vector<double> clonetimes;
@@ -65,7 +65,7 @@ void UpdaterSLAM::delayed_init(State *state, std::vector<Feature*>& feature_vec)
         }
 
     }
-    rT1 =  boost::posix_time::microsec_clock::local_time();
+    //rT1 =  boost::posix_time::microsec_clock::local_time();
 
     // 2. Create vector of cloned *CAMERA* poses at each of our clone timesteps
     std::unordered_map<size_t, std::unordered_map<double, FeatureInitializer::ClonePose>> clones_cam;
@@ -111,7 +111,7 @@ void UpdaterSLAM::delayed_init(State *state, std::vector<Feature*>& feature_vec)
         it1++;
 
     }
-    rT2 =  boost::posix_time::microsec_clock::local_time();
+    //rT2 =  boost::posix_time::microsec_clock::local_time();
 
     // 4. Compute linear system for each feature, nullspace project, and reject
     auto it2 = feature_vec.begin();
@@ -206,7 +206,7 @@ void UpdaterSLAM::delayed_init(State *state, std::vector<Feature*>& feature_vec)
         }
 
     }
-    rT3 =  boost::posix_time::microsec_clock::local_time();
+    //rT3 =  boost::posix_time::microsec_clock::local_time();
 
     // Debug print timing information
     //if(!feature_vec.empty()) {
@@ -618,8 +618,3 @@ void UpdaterSLAM::perform_anchor_change(State* state, Landmark* landmark, double
     landmark->has_had_anchor_change = true;
 
 }
-
-
-
-
-
