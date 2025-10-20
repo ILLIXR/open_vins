@@ -226,7 +226,7 @@ namespace ov_msckf {
         }
 
         // Finally load it into our params
-        for(int i=0; i<params.state_options.num_cameras; i++) {
+        for(size_t i=0; i<static_cast<size_t>(params.state_options.num_cameras); i++) {
 
             // Convert to Eigen
             assert(p_intrinsic.at(i).size()==8);
