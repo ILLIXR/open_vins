@@ -39,8 +39,6 @@ if (ILLIXR_INTEGRATION)
     include_directories(${ILLIXR_ROOT}/include
                         src
                         ${OpenCV_INCLUDE_DIR}
-                        ${EIGEN3_INCLUDE_DIR}
-                        ${Boost_INCLUDE_DIRS}
                         ${catkin_INCLUDE_DIRS}
     )
 else()
@@ -62,8 +60,12 @@ endif()
 
 # Set link libraries used by all binaries
 list(APPEND thirdparty_libraries
-     ${Boost_LIBRARIES}
-     ${OpenCV_LIBRARIES}
+     Boost::serialization
+     spdlog::spdlog
+     opencv_core
+     opencv_imgproc
+     opencv_calib3d
+     Eigen3::eigen
      ${catkin_LIBRARIES}
 )
 
