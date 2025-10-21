@@ -134,7 +134,7 @@ if (ILLIXR_INTEGRATION)
     set(PLUGIN_NAME plugin.openvins${ILLIXR_BUILD_SUFFIX})
     add_library(${PLUGIN_NAME} SHARED src/slam2.cpp
                 src/slam2.hpp
-                ${ILLIXR_ROOT}/../utils/switchboard.cpp
+                #${ILLIXR_ROOT}/../utils/switchboard.cpp
                 ${ILLIXR_ROOT}/illixr/switchboard.hpp
     )
 
