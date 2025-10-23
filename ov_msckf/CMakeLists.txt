@@ -65,7 +65,7 @@ list(APPEND thirdparty_libraries
      opencv_core
      opencv_imgproc
      opencv_calib3d
-     Eigen3::eigen
+     Eigen3::Eigen
      ${catkin_LIBRARIES}
 )
 
