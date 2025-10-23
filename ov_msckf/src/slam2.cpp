@@ -257,14 +257,14 @@ void slam2::feed_imu_cam(const switchboard::ptr<const imu_type> &datum, [[maybe_
                 cam_buffer_->time,
                 from_seconds(state_->_calib_dt_CAMtoIMU->value()(0)),
                 imu_params{
-                        .gyro_noise = manager_params_.imu_noises.sigma_w,
-                        .acc_noise = manager_params_.imu_noises.sigma_a,
-                        .gyro_walk = manager_params_.imu_noises.sigma_wb,
-                        .acc_walk = manager_params_.imu_noises.sigma_ab,
-                        .n_gravity = Eigen::Matrix<double, 3, 1>(0.0, 0.0, -9.81),
-                        .imu_integration_sigma = 1.0,
+                        manager_params_.imu_noises.sigma_w,
+                        manager_params_.imu_noises.sigma_a,
+                        manager_params_.imu_noises.sigma_wb,
+                        manager_params_.imu_noises.sigma_ab,
+                        Eigen::Matrix<double, 3, 1>(0.0, 0.0, -9.81),
+                        1.0,
                         // TODO defaults to 200 for EuRoc, needs to change for ZED
-                        .nominal_rate = 200.0,
+                        200.0
                 },
                 state_->_imu->bias_a(),
                 state_->_imu->bias_g(),

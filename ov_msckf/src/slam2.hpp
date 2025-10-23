@@ -17,7 +17,7 @@ namespace ILLIXR {
 
 duration from_seconds(double seconds) { return duration{long(seconds * 1e9L)}; }
 
-class slam2 : public plugin {
+class MY_EXPORT_API slam2 : public plugin {
 public:
     /* Provide handles to slam2 */
     [[maybe_unused]] slam2(const std::string &name_, phonebook *pb_);

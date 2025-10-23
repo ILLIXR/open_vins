@@ -21,6 +21,9 @@
 #include <opencv2/calib3d.hpp>
 #include "Simulator.h"
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+#endif
 
 using namespace ov_msckf;
 
@@ -220,7 +223,11 @@ Simulator::Simulator(VioManagerOptions& params_) {
     }
 
     // Nice sleep so the user can look at the printout
+#if defined(_WIN32) || defined(_WIN64)
+    Sleep(3000);
+#else
     sleep(3);
+#endif
 
 }
 
