@@ -50,6 +50,8 @@ list(APPEND thirdparty_libraries
      spdlog::spdlog
      opencv_core
      opencv_imgproc
+     opencv_aruco
+     opencv_video
      opencv_calib3d
      Eigen3::Eigen
      ${catkin_LIBRARIES}
