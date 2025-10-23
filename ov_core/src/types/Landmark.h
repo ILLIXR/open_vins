@@ -27,6 +27,8 @@
 #include "utils/colors.h"
 #include <cassert>
 
+#include "ov_export.hpp"
+
 namespace ov_type {
 
 
@@ -37,7 +39,7 @@ namespace ov_type {
      * Additionally if this is an anchored representation we store what clone timestamp this is anchored from and what camera.
      * If this features should be marginalized its flag can be set and during cleanup it will be removed.
      */
-    class Landmark : public Vec {
+    class OV_CORE_API_EXPORT Landmark : public Vec {
 
     public:
 

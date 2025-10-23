@@ -44,6 +44,7 @@
 
 #include "VioManagerOptions.h"
 
+#include "ov_export.hpp"
 
 namespace ov_msckf {
 
@@ -56,7 +57,7 @@ namespace ov_msckf {
      * We feed in measurements into this class and send them to their respective algorithms.
      * If we have measurements to propagate or update with, this class will call on our state to do that.
      */
-    class VioManager {
+    class OV_MSCKF_API_EXPORT VioManager {
 
 
     public:
@@ -66,7 +67,7 @@ namespace ov_msckf {
          * @param params_ Parameters loaded from either ROS or CMDLINE
          */
         VioManager(VioManagerOptions& params_);
-        
+
 
         /**
          * @brief Feed function for inertial data

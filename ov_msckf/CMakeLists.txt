@@ -90,6 +90,7 @@ list(APPEND library_source_files
      src/update/UpdaterHelper.cpp
      src/update/UpdaterMSCKF.cpp
      src/update/UpdaterSLAM.cpp
+     ../ov_export.hpp
 )
 if (catkin_FOUND)
     list(APPEND library_source_files
@@ -120,10 +121,14 @@ if(ANDROID_BUILD)
     )
 
 else()
+    if(WIN32 OR MSVC)
+        target_compile_definitions(ov_msckf_lib PRIVATE OV_MSCKF_API_EXPORT)
+    endif()
     target_link_libraries(ov_msckf_lib ${thirdparty_libraries})
     target_include_directories(ov_msckf_lib PUBLIC src)
 endif()
 set_property(TARGET ov_msckf_lib PROPERTY CXX_STANDARD 17)
+target_include_directories(ov_msckf_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 
 ##################################################
@@ -178,6 +183,7 @@ if (ILLIXR_INTEGRATION)
         install(TARGETS ${PLUGIN_NAME} DESTINATION lib)
     endif()
     set_property(TARGET ${PLUGIN_NAME} PROPERTY CXX_STANDARD 17)
+    target_include_directories(${PLUGIN_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 else()
     add_executable(run_illixr_msckf src/run_illixr_msckf.cpp)

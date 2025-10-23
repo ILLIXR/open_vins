@@ -34,7 +34,7 @@ namespace ov_core {
      * This class should be used when we are using the @ref ov_msckf::Simulator class to generate measurements.
      * It simply takes the resulting simulation data and appends it to the internal feature database.
      */
-    class TrackSIM : public TrackBase {
+    class OV_CORE_API_EXPORT TrackSIM : public TrackBase {
 
     public:
 

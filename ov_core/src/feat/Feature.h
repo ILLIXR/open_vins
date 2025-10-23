@@ -27,6 +27,8 @@
 #include <unordered_map>
 #include <Eigen/Eigen>
 
+#include "ov_export.hpp"
+
 namespace ov_core {
 
     /**
@@ -36,7 +38,7 @@ namespace ov_core {
      * Each feature has a unique ID assigned to it, and should have a set of feature tracks alongside it.
      * See the FeatureDatabase class for details on how we load information into this, and how we delete features.
      */
-    class Feature {
+    class OV_CORE_API_EXPORT Feature {
 
     public:
 

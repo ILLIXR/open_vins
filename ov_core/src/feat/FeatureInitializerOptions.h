@@ -21,6 +21,7 @@
 #ifndef OV_CORE_INITIALIZEROPTIONS_H
 #define OV_CORE_INITIALIZEROPTIONS_H
 
+#include "ov_export.hpp"
 
 namespace ov_core {
 
@@ -28,7 +29,7 @@ namespace ov_core {
     /**
      * @brief Struct which stores all our feature initializer options
      */
-    struct FeatureInitializerOptions {
+    struct OV_CORE_API_EXPORT FeatureInitializerOptions {
 
         /// Max runs for Gauss Newton
         int max_runs = 20;

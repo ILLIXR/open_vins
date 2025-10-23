@@ -95,4 +95,3 @@ State::State(StateOptions &options) {
         }
     }
 }
-

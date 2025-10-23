@@ -21,14 +21,14 @@
 #ifndef OV_TYPE_LANDMARKREPRESENTATION_H
 #define OV_TYPE_LANDMARKREPRESENTATION_H
 
-
+#include "ov_export.hpp"
 
 namespace ov_type {
 
     /**
      * @brief Class has useful feature representation types
      */
-    class LandmarkRepresentation
+    class OV_CORE_API_EXPORT LandmarkRepresentation
     {
 
     public:

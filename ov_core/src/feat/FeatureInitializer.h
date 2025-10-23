@@ -26,6 +26,7 @@
 #include "Feature.h"
 #include "FeatureInitializerOptions.h"
 #include "utils/quat_ops.h"
+#include "ov_export.hpp"
 
 namespace ov_core {
 
@@ -38,7 +39,7 @@ namespace ov_core {
      * One should first call the single_triangulation() function afterwhich single_gaussnewton() allows for refinement.
      * Please see the @ref update-featinit page for detailed derivations.
      */
-    class FeatureInitializer
+    class OV_CORE_API_EXPORT FeatureInitializer
     {
 
     public:

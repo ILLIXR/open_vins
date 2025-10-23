@@ -37,7 +37,7 @@ namespace ov_core {
      * Right now we use ORB descriptors as we have found it is the fastest when computing descriptors.
      * Tracks are then rejected based on a ratio test and ransac.
      */
-    class TrackDescriptor : public TrackBase {
+    class OV_CORE_API_EXPORT TrackDescriptor : public TrackBase {
 
     public:
 

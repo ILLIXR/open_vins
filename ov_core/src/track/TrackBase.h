@@ -39,6 +39,7 @@
 #include "feat/FeatureDatabase.h"
 #include "utils/colors.h"
 
+#include "ov_export.hpp"
 
 namespace ov_core {
 
@@ -68,7 +69,7 @@ namespace ov_core {
      * This visualization needs access to the prior images and their tracks, thus must synchronise in the case of multi-threading.
      * This shouldn't impact performance, but high frequency visualization calls can negatively effect the performance.
      */
-    class TrackBase {
+    class OV_CORE_API_EXPORT TrackBase {
 
     public:
 

@@ -72,6 +72,7 @@ add_library(ov_core_lib SHARED
             src/types/Landmark.cpp
             src/feat/Feature.cpp
             src/feat/FeatureInitializer.cpp
+            ../ov_export.hpp
 )
 if(ANDROID_BUILD)
     target_link_libraries(ov_core_lib
@@ -101,9 +102,13 @@ if(ANDROID_BUILD)
                                ${ANDROID_NDK}/sources/android/native_app_glue
     )
 else()
+    if(WIN32 OR MSVC)
+        target_compile_definitions(ov_core_lib PRIVATE BUILDING_OV_CORE)
+    endif()
     target_link_libraries(ov_core_lib ${thirdparty_libraries})
     target_include_directories(ov_core_lib PUBLIC src)
 endif()
+target_include_directories(ov_core_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 set_property(TARGET ov_core_lib PROPERTY CXX_STANDARD 17)
 
 if(ILLIXR_INTEGRATION)

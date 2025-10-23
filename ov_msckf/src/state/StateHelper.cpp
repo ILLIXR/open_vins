@@ -583,4 +583,3 @@ void StateHelper::augment_clone(State *state, Eigen::Matrix<double, 3, 1> last_w
     }
 
 }
-

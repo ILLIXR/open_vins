@@ -35,7 +35,7 @@ namespace ov_core {
      * We track the top left corner of the tag as compared to the pose of the tag or any other corners.
      * Right now we hardcode the dictionary to be `cv::aruco::DICT_6X6_25`, so please generate tags in this family of tags.
      */
-    class TrackAruco : public TrackBase {
+    class OV_CORE_API_EXPORT TrackAruco : public TrackBase {
 
     public:
 

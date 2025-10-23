@@ -37,7 +37,7 @@
 #include "utils/colors.h"
 
 
-using namespace ov_core;
+//using namespace ov_core;
 
 
 namespace ov_msckf {

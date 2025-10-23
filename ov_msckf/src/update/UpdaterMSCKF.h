@@ -64,13 +64,13 @@ namespace ov_msckf {
          * @param options Updater options (include measurement noise value)
          * @param feat_init_options Feature initializer options
          */
-        UpdaterMSCKF(UpdaterOptions &options, FeatureInitializerOptions &feat_init_options) : _options(options) {
+        UpdaterMSCKF(UpdaterOptions &options, ov_core::FeatureInitializerOptions &feat_init_options) : _options(options) {
 
             // Save our raw pixel noise squared
             _options.sigma_pix_sq = std::pow(_options.sigma_pix,2);
 
             // Save our feature initializer
-            initializer_feat = new FeatureInitializer(feat_init_options);
+            initializer_feat = new ov_core::FeatureInitializer(feat_init_options);
 
             // Initialize the chi squared test table with confidence level 0.95
             // https://github.com/KumarRobotics/msckf_vio/blob/050c50defa5a7fd9a04c1eed5687b405f02919b5/src/msckf_vio.cpp#L215-L221
@@ -88,7 +88,7 @@ namespace ov_msckf {
          * @param state State of the filter
          * @param feature_vec Features that can be used for update
          */
-        void update(State *state, std::vector<Feature*>& feature_vec);
+        void update(State *state, std::vector<ov_core::Feature*>& feature_vec);
 
 
 
@@ -99,7 +99,7 @@ namespace ov_msckf {
         UpdaterOptions _options;
 
         /// Feature initializer class object
-        FeatureInitializer* initializer_feat;
+        ov_core::FeatureInitializer* initializer_feat;
 
         /// Chi squared 95th percentile table (lookup would be size of residual)
         std::map<int, double> chi_squared_table;
@@ -116,5 +116,3 @@ namespace ov_msckf {
 
 
 #endif //OV_MSCKF_UPDATER_MSCKF_H
-
-

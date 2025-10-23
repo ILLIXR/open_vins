@@ -37,7 +37,7 @@ namespace ov_core {
      * to find the stereo correspondence information also.
      * This uses the [calcOpticalFlowPyrLK](https://github.com/opencv/opencv/blob/master/modules/video/src/lkpyramid.cpp) OpenCV function to do the KLT tracking.
      */
-    class TrackKLT : public TrackBase {
+    class OV_CORE_API_EXPORT TrackKLT : public TrackBase {
 
     public:
 

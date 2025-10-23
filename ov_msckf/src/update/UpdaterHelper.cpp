@@ -649,6 +649,3 @@ void UpdaterHelper::measurement_compress_inplace(Eigen::MatrixXd &H_x, Eigen::Ve
     res.conservativeResize(r, res.cols());
 
 }
-
-
-
