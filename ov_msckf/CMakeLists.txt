@@ -123,7 +123,7 @@ if(ANDROID_BUILD)
 
 else()
     if(WIN32 OR MSVC)
-        target_compile_definitions(ov_msckf_lib PRIVATE OV_MSCKF_API_EXPORT)
+        target_compile_definitions(ov_msckf_lib PRIVATE BUILDING_OV_MSCKF)
     endif()
     target_link_libraries(ov_msckf_lib ${thirdparty_libraries})
     target_include_directories(ov_msckf_lib PUBLIC src)

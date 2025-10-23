@@ -32,6 +32,8 @@
 #include "types/Landmark.h"
 #include "StateOptions.h"
 
+#include "ov_export.hpp"
+
 using namespace ov_core;
 using namespace ov_type;
 
@@ -46,7 +48,7 @@ namespace ov_msckf {
      * We additionally have more parameters for online estimation of calibration and SLAM features.
      * We also have the covariance of the system, which should be managed using the StateHelper class.
      */
-    class State {
+    class OV_MSCKF_API_EXPORT State {
 
     public:
 
