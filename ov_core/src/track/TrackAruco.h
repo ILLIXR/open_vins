@@ -43,8 +43,13 @@ namespace ov_core {
          * @brief Public default constructor
          */
         TrackAruco() : TrackBase(), max_tag_id(1024), do_downsizing(false) {
+#if defined(_WIN32) || defined(_WIN64)
+            aruco_dict = cv::makePtr<cv::aruco::Dictionary>(cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_250));
+            aruco_params = cv::makePtr<cv::aruco::DetectorParameters>();
+#else
             aruco_dict = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_250);
             aruco_params = cv::aruco::DetectorParameters::create();
+#endif
             //aruco_params->cornerRefinementMethod = cv::aruco::CornerRefineMethod::CORNER_REFINE_SUBPIX; // people with newer opencv might fail here
         }
 
@@ -54,8 +59,13 @@ namespace ov_core {
          * @param do_downsizing we can scale the image by 1/2 to increase Aruco tag extraction speed
          */
         explicit TrackAruco(int numaruco, bool do_downsizing) : TrackBase(0, numaruco), max_tag_id(numaruco), do_downsizing(do_downsizing) {
+#if defined(_WIN32) || defined(_WIN64)
+            aruco_dict = cv::makePtr<cv::aruco::Dictionary>(cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_250));
+            aruco_params = cv::makePtr<cv::aruco::DetectorParameters>();
+#else
             aruco_dict = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_250);
             aruco_params = cv::aruco::DetectorParameters::create();
+#endif
             //aruco_params->cornerRefinementMethod = cv::aruco::CornerRefineMethod::CORNER_REFINE_SUBPIX; // people with newer opencv might fail here
         }
 
