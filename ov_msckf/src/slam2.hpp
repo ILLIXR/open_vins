@@ -1,5 +1,9 @@
 #pragma once
 
+#if defined(_WIN32) || defined(_WIN64)
+#define _HAS_STD_BYTE 0
+#endif
+
 #include "core/VioManager.h"
 #include "state/State.h"
 

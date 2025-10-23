@@ -18,12 +18,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+#if defined(_WIN32) || defined(_WIN64)
+#define _HAS_STD_BYTE 0
+#include <windows.h>
+#endif
 #include <opencv2/calib3d.hpp>
 #include "Simulator.h"
 
-#if defined(_WIN32) || defined(_WIN64)
-#include <windows.h>
-#endif
 
 using namespace ov_msckf;
 
