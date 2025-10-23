@@ -25,6 +25,8 @@
 #include "utils/quat_ops.h"
 #include "utils/colors.h"
 
+#include "ov_export.hpp"
+
 namespace ov_core {
 
 
@@ -44,7 +46,7 @@ namespace ov_core {
      * 5. Return a roll and pitch aligned with gravity and biases.
      *
      */
-    class InertialInitializer {
+    class OV_CORE_API_EXPORT InertialInitializer {
 
     public:
 

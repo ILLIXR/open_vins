@@ -26,6 +26,8 @@
 
 #include "utils/quat_ops.h"
 
+#include "ov_export.hpp"
+
 namespace ov_core {
 
 
@@ -98,7 +100,7 @@ namespace ov_core {
      * The indexes correspond to the the two poses that are older and two poses that are newer then the current time we want to get (i.e. i-1 and i are less than s, while i+1 and i+2 are both greater than time s).
      * Some additional derivations are available in [these notes](http://udel.edu/~pgeneva/downloads/notes/2018_notes_mueffler2017arxiv.pdf).
      */
-    class BsplineSE3 {
+    class OV_CORE_API_EXPORT BsplineSE3 {
 
     public:
 

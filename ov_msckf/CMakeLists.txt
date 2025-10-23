@@ -61,6 +61,7 @@ endif()
 # Set link libraries used by all binaries
 list(APPEND thirdparty_libraries
      Boost::serialization
+     Boost::filesystem
      spdlog::spdlog
      opencv_core
      opencv_imgproc
