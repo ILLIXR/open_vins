@@ -178,7 +178,7 @@ VioManagerOptions create_params() {
         : plugin{name_, pb_}
         , switchboard_{phonebook_->lookup_impl<switchboard>()}
         , clock_{phonebook_->lookup_impl<relative_clock>()}
-        , pose_{switchboard_->get_writer<pose_type>("slow_pose")}
+        , pose_{switchboard_->get_writer<pose::head_pose_type>("slow_pose")}
         , imu_integrator_input_{switchboard_->get_writer<imu_integrator_input>("imu_integrator_input")}
         , cam_{switchboard_->get_buffered_reader<binocular_cam_type>("cam")}
         , manager_params_{create_params()}

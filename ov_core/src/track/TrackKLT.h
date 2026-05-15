@@ -129,11 +129,11 @@ namespace ov_core {
         // Timing variables
         boost::posix_time::ptime rT1, rT2, rT3, rT4, rT5, rT6, rT7;
         unsigned total_images;
-        double total_pyramid_time;
-        double total_detection_time;
-        double total_matching_time;
-        double total_db_time;
-        double total_time;
+        double total_pyramid_time = 0.;
+        double total_detection_time = 0.;
+        double total_matching_time = 0.;
+        double total_db_time = 0.;
+        double total_time = 0.;
 
         // Parameters for our FAST grid detector
         int threshold;
