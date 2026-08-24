@@ -15,9 +15,6 @@ if (NOT ILLIXR_INTEGRATION)
     message(FATAL_ERROR "This build script is for ILLIXR builds")
 endif()
 
-# By default we do not build with ROS, but you can disable this and just build as a library
-set(ILLIXR_ROOT "" CACHE PATH "Directory of ILLIXR includes")
-
 option(USE_ZED "Whether to build for the zed camera" OFF)
 if (USE_ZED)
     add_compile_definitions(HAVE_ZED)
